@@ -6,8 +6,7 @@
         Closing="OnClose" ResizeMode="NoResize" ShowInTaskbar="False" WindowStyle="None" AllowsTransparency="True"
         SizeToContent="WidthAndHeight"
         Title="" MinWidth="542" Deactivated="MainWindow_OnLostFocus" Loaded="MainWindow_OnLoaded"
-        BorderBrush="Transparent" BorderThickness="1"
-        Background="Transparent">
+        BorderBrush="Transparent" BorderThickness="1" Background="#FF252525">
 
     <Window.CommandBindings>
         <CommandBinding Command="local:MainWindow.CloseWindowCommand"
@@ -34,7 +33,7 @@
         <local:WindowHandleToCachedIconConverter x:Key="WindowHandleToCachedIconConverter" />
     </Window.Resources>
 
-    <Border Padding="3" Background="White" BorderBrush="DarkGray" BorderThickness="1" Name="Border">
+    <Border Padding="3" Background="Black" BorderBrush="DarkGray" BorderThickness="1" Name="Border">
         <DockPanel LastChildFill="True">
             <DockPanel Margin="4,0,4,0" Name="HelpPanel" Background="Transparent" Height="0" DockPanel.Dock="Top">
                 <TextBlock FontSize="10" DockPanel.Dock="Left">
@@ -69,7 +68,7 @@
             </DockPanel>
             <Grid DockPanel.Dock="Top">
                 <TextBox Name="tb" Padding="5" VerticalAlignment="Top" TextChanged="TextChanged" FontSize="15"
-                         VerticalContentAlignment="Center">
+                         VerticalContentAlignment="Center" Background="#FF68686F" Foreground="White" SelectionBrush="#FFA5AAAD">
                     <TextBox.InputBindings>
                         <!-- For now, leave these here.  Would it be better to route them upward? -->
                         <KeyBinding Command="local:MainWindow.ScrollListUpCommand" Key="Up" />
@@ -82,7 +81,7 @@
                            VerticalAlignment="Center"
                            FontSize="18" FontWeight="Bold" Opacity="0.4"
                            PreviewMouseDown="ShowHelpTextBlock_OnPreviewMouseDown"
-                           Name="ShowHelpTextBlock" Cursor="Hand" Foreground="DarkGray">
+                           Name="ShowHelpTextBlock" Cursor="Hand" Foreground="DarkGray" Visibility="Hidden">
                     <TextBlock.Text>?</TextBlock.Text>
                     <TextBlock.Triggers>
                         <EventTrigger RoutedEvent="MouseEnter">
@@ -109,7 +108,7 @@
                 </TextBlock>
             </Grid>
             <ListBox Name="lb" SelectionMode="Extended" ItemsSource="{Binding}" MinWidth="522" BorderThickness="0"
-                     Margin="-1,3,-1,0" Padding="0" DockPanel.Dock="Bottom">
+                     Margin="-1,3,-1,0" Padding="0" DockPanel.Dock="Bottom" Background="#FF68686F" Foreground="White">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <StackPanel Orientation="Horizontal">
@@ -197,12 +196,6 @@
                         </StackPanel>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
-                <ListBox.ItemContainerStyle>
-                    <Style TargetType="{x:Type ListBoxItem}" BasedOn="{StaticResource {x:Type ListBoxItem}}">
-                        <Setter Property="Padding" Value="0,5" />
-                        <EventSetter Event="MouseDoubleClick" Handler="ListBoxItem_MouseDoubleClick" />
-                    </Style>
-                </ListBox.ItemContainerStyle>
                 <!-- Changes inactive selection color to be same as selected -->
                 <ListBox.Resources>
                     <SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}"

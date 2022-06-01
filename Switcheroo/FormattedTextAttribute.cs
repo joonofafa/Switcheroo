@@ -18,10 +18,12 @@
  * along with Switcheroo.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+using System.Drawing;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Markup;
+using System.Windows.Media;
 
 namespace Switcheroo
 {
@@ -60,6 +62,9 @@ namespace Switcheroo
             textBlock.Inlines.Clear();
             var result = (Span) XamlReader.Parse(formattedText);
             textBlock.Inlines.Add(result);
+
+            var bc = new BrushConverter();
+            textBlock.Foreground = (System.Windows.Media.Brush)bc.ConvertFrom("#FFFFFFFF"); ;
         }
     }
 }
