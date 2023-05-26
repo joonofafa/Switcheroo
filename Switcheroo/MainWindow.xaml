@@ -5,8 +5,8 @@
         xmlns:system="clr-namespace:System;assembly=mscorlib"
         Closing="OnClose" ResizeMode="NoResize" ShowInTaskbar="False" WindowStyle="None" AllowsTransparency="True"
         SizeToContent="WidthAndHeight"
-        Title="" MinWidth="542" Deactivated="MainWindow_OnLostFocus" Loaded="MainWindow_OnLoaded"
-        BorderBrush="Transparent" BorderThickness="1" Background="#FF252525">
+        Title="" MinWidth="800" Deactivated="MainWindow_OnLostFocus" Loaded="MainWindow_OnLoaded"
+        BorderBrush="Transparent" BorderThickness="1" Background="#FF252525" Width="1000">
 
     <Window.CommandBindings>
         <CommandBinding Command="local:MainWindow.CloseWindowCommand"
@@ -67,8 +67,13 @@
                 </StackPanel>
             </DockPanel>
             <Grid DockPanel.Dock="Top">
-                <TextBox Name="tb" Padding="5" VerticalAlignment="Top" TextChanged="TextChanged" FontSize="15"
-                         VerticalContentAlignment="Center" Background="#FF68686F" Foreground="White" SelectionBrush="#FFA5AAAD">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="363*"/>
+                    <ColumnDefinition Width="162*"/>
+                    <ColumnDefinition Width="265*"/>
+                </Grid.ColumnDefinitions>
+                <TextBox Name="tb" Padding="5" VerticalAlignment="Center" TextChanged="TextChanged" FontSize="24"
+                         VerticalContentAlignment="Center" Background="#FF68686F" Foreground="White" SelectionBrush="#FFA5AAAD" FontFamily="KT font Bold" FontWeight="Bold" Grid.ColumnSpan="3">
                     <TextBox.InputBindings>
                         <!-- For now, leave these here.  Would it be better to route them upward? -->
                         <KeyBinding Command="local:MainWindow.ScrollListUpCommand" Key="Up" />
@@ -77,11 +82,11 @@
                         <KeyBinding Command="local:MainWindow.ScrollListDownCommand" Key="Tab" />
                     </TextBox.InputBindings>
                 </TextBox>
-                <TextBlock Margin="0,0,10,0" Width="15" HorizontalAlignment="Right" TextAlignment="Center"
+                <TextBlock Margin="159,0,0,0" Width="15" HorizontalAlignment="Left" TextAlignment="Center"
                            VerticalAlignment="Center"
                            FontSize="18" FontWeight="Bold" Opacity="0.4"
                            PreviewMouseDown="ShowHelpTextBlock_OnPreviewMouseDown"
-                           Name="ShowHelpTextBlock" Cursor="Hand" Foreground="DarkGray" Visibility="Hidden">
+                           Name="ShowHelpTextBlock" Cursor="Hand" Foreground="DarkGray" Visibility="Hidden" Grid.Column="2">
                     <TextBlock.Text>?</TextBlock.Text>
                     <TextBlock.Triggers>
                         <EventTrigger RoutedEvent="MouseEnter">
@@ -108,7 +113,7 @@
                 </TextBlock>
             </Grid>
             <ListBox Name="lb" SelectionMode="Extended" ItemsSource="{Binding}" MinWidth="522" BorderThickness="0"
-                     Margin="-1,3,-1,0" Padding="0" DockPanel.Dock="Bottom" Background="#FF68686F" Foreground="White">
+                     Margin="-1,3,-1,0" Padding="0" DockPanel.Dock="Bottom" Background="#FF68686F" Foreground="White" FontFamily="KT font Medium" FontSize="16">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <StackPanel Orientation="Horizontal">
@@ -161,11 +166,11 @@
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="22" />
-                                    <ColumnDefinition Width="400" />
-                                    <ColumnDefinition Width="106" />
+                                    <ColumnDefinition Width="30" />
+                                    <ColumnDefinition Width="700" />
+                                    <ColumnDefinition Width="100" />
                                 </Grid.ColumnDefinitions>
-                                <Image Height="19" Grid.Row="0" Grid.Column="0" Margin="3,0"
+                                <Image Height="30" Grid.Row="0" Grid.Column="0" Margin="3,0"
                                        Opacity="{Binding IsBeingClosed, Converter={StaticResource ImageOpacityConverter}, Mode=OneTime}">
                                     <Image.Source>
                                         <PriorityBinding>
@@ -178,7 +183,7 @@
                                     </Image.Source>
                                 </Image>
                                 <TextBlock local:FormattedTextAttribute.FormattedText="{Binding Path=FormattedTitle}"
-                                           Grid.Row="0" Grid.Column="1" Margin="3,0">
+                                           Grid.Row="0" Grid.Column="1" Margin="3,0" VerticalAlignment="Center">
                                     <TextBlock.Foreground>
                                         <SolidColorBrush
                                             Color="{Binding IsBeingClosed, Converter={StaticResource TitleColorConverter}, Mode=OneTime}" />
@@ -186,7 +191,7 @@
                                 </TextBlock>
                                 <TextBlock
                                     local:FormattedTextAttribute.FormattedText="{Binding Path=FormattedProcessTitle}"
-                                    Grid.Row="0" Grid.Column="2" Margin="0" TextAlignment="Right">
+                                    Grid.Row="0" Grid.Column="2" Margin="0" TextAlignment="Right" VerticalAlignment="Center">
                                     <TextBlock.Foreground>
                                         <SolidColorBrush
                                             Color="{Binding IsBeingClosed, Converter={StaticResource ProcessColorConverter}, Mode=OneTime}" />

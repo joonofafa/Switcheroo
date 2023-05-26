@@ -63,8 +63,11 @@ namespace Switcheroo
             var result = (Span) XamlReader.Parse(formattedText);
             textBlock.Inlines.Add(result);
 
+            textBlock.FontFamily = new System.Windows.Media.FontFamily("NanumBarunGothicBold");
+            /*textBlock.FontSize = 12;*/
+
             var bc = new BrushConverter();
-            textBlock.Foreground = (System.Windows.Media.Brush)bc.ConvertFrom("#FFFFFFFF"); ;
+            textBlock.Foreground = (System.Windows.Media.Brush) bc.ConvertFrom("#FFFFFFFF");
         }
     }
 }

@@ -264,9 +264,16 @@ namespace Switcheroo
         private void LoadData(InitialFocus focus)
         {
             _unfilteredWindowList = new WindowFinder().GetWindows().Select(window => new AppWindowViewModel(window)).ToList();
+            foreach (var window in _unfilteredWindowList)
+            {
+                if (window.WindowTitle.ToUpper().Equals("NEXUSFILE"))
+                {
+                    _unfilteredWindowList.Remove(window);
+                    break;
+                }
+            }
 
             var firstWindow = _unfilteredWindowList.FirstOrDefault();
-
             var foregroundWindowMovedToBottom = false;
             
             // Move first window to the bottom of the list if it's related to the foreground window
@@ -284,7 +291,7 @@ namespace Switcheroo
             {
                 window.FormattedTitle = new XamlHighlighter().Highlight(new[] {new StringPart(window.AppWindow.Title)});
                 window.FormattedProcessTitle =
-                    new XamlHighlighter().Highlight(new[] {new StringPart(window.AppWindow.ProcessTitle)});
+                    new XamlHighlighter().Highlight(new[] {new StringPart(window.AppWindow.ProcessTitle)});   
             }
 
             lb.DataContext = null;
