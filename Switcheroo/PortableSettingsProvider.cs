@@ -215,7 +215,6 @@ namespace Switcheroo
             XmlDocument blankXmlDocument = new XmlDocument();
             blankXmlDocument.AppendChild(blankXmlDocument.CreateXmlDeclaration("1.0", "utf-8", string.Empty));
             blankXmlDocument.AppendChild(blankXmlDocument.CreateElement(_rootNodeName));
-
             return blankXmlDocument;
         }
 

@@ -63,7 +63,7 @@ namespace Switcheroo
             var result = (Span) XamlReader.Parse(formattedText);
             textBlock.Inlines.Add(result);
 
-            textBlock.FontFamily = new System.Windows.Media.FontFamily("NanumBarunGothicBold");
+            /*textBlock.FontFamily = new System.Windows.Media.FontFamily("NanumBarunGothicBold");*/
             /*textBlock.FontSize = 12;*/
 
             var bc = new BrushConverter();

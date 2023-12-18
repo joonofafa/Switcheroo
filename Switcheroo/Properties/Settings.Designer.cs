@@ -142,5 +142,20 @@ namespace Switcheroo.Properties {
                 this["EnableHotKey"] = value;
             }
         }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("75")]
+        public int HotKeyForExecuter
+        {
+            get
+            {
+                return ((int)(this["HotKey"]));
+            }
+            set
+            {
+                this["HotKey"] = value;
+            }
+        }
     }
 }

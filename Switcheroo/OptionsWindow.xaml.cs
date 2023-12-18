@@ -219,7 +219,7 @@ namespace Switcheroo
             }
             catch (HotkeyAlreadyInUseException)
             {
-                // It is alright if the hotkey can't be reactivated
+                // It is alright if the hotkey can't be reactivated.
             }
         }
 

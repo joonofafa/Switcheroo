@@ -113,7 +113,7 @@
                 </TextBlock>
             </Grid>
             <ListBox Name="lb" SelectionMode="Extended" ItemsSource="{Binding}" MinWidth="522" BorderThickness="0"
-                     Margin="-1,3,-1,0" Padding="0" DockPanel.Dock="Bottom" Background="#FF68686F" Foreground="White" FontFamily="KT font Medium" FontSize="16">
+                     Margin="-1,3,-1,0" Padding="0" DockPanel.Dock="Bottom" Background="#FF68686F" Foreground="White" FontSize="16">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <StackPanel Orientation="Horizontal">
@@ -170,28 +170,40 @@
                                     <ColumnDefinition Width="700" />
                                     <ColumnDefinition Width="100" />
                                 </Grid.ColumnDefinitions>
+                                <!--<Image Height="30" Grid.Row="0" Grid.Column="0" Margin="3,0" Source="{Binding ImageSource}"-->
+                                       <!--Opacity="{Binding IsBeingClosed, Converter={StaticResource ImageOpacityConverter}, Mode=OneTime}">-->
+                                <!--</Image>-->
                                 <Image Height="30" Grid.Row="0" Grid.Column="0" Margin="3,0"
                                        Opacity="{Binding IsBeingClosed, Converter={StaticResource ImageOpacityConverter}, Mode=OneTime}">
-                                    <Image.Source>
-                                        <PriorityBinding>
-                                            <Binding Path="HWnd"
-                                                     Converter="{StaticResource WindowHandleToIconConverter}"
-                                                     IsAsync="True" />
-                                            <Binding Path="HWnd"
-                                                     Converter="{StaticResource WindowHandleToCachedIconConverter}" />
-                                        </PriorityBinding>
-                                    </Image.Source>
+                                    <Image.Style>
+                                        <Style TargetType="{x:Type Image}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding ImageSource}" Value="{x:Null}">
+                                                    <DataTrigger.Setters>
+                                                        <Setter Property="Source">
+                                                            <Setter.Value>
+                                                                <PriorityBinding>
+                                                                    <Binding Path="HWnd" Converter="{StaticResource WindowHandleToIconConverter}" IsAsync="True" />
+                                                                    <Binding Path="HWnd" Converter="{StaticResource WindowHandleToCachedIconConverter}" />
+                                                                </PriorityBinding>
+                                                            </Setter.Value>
+                                                        </Setter>
+                                                    </DataTrigger.Setters>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Image.Style>
                                 </Image>
                                 <TextBlock local:FormattedTextAttribute.FormattedText="{Binding Path=FormattedTitle}"
-                                           Grid.Row="0" Grid.Column="1" Margin="3,0" VerticalAlignment="Center">
+                                           Grid.Row="0" Grid.Column="1" Margin="3,0" VerticalAlignment="Center" FontFamily="KT font Light">
                                     <TextBlock.Foreground>
                                         <SolidColorBrush
                                             Color="{Binding IsBeingClosed, Converter={StaticResource TitleColorConverter}, Mode=OneTime}" />
                                     </TextBlock.Foreground>
                                 </TextBlock>
                                 <TextBlock
-                                    local:FormattedTextAttribute.FormattedText="{Binding Path=FormattedProcessTitle}"
-                                    Grid.Row="0" Grid.Column="2" Margin="0" TextAlignment="Right" VerticalAlignment="Center">
+                                    local:FormattedTextAttribute.FormattedText="{Binding Path=FormattedSubTitle}"
+                                    Grid.Row="0" Grid.Column="2" Margin="0" TextAlignment="Right" VerticalAlignment="Center" FontFamily="KT font Bold">
                                     <TextBlock.Foreground>
                                         <SolidColorBrush
                                             Color="{Binding IsBeingClosed, Converter={StaticResource ProcessColorConverter}, Mode=OneTime}" />

@@ -22,6 +22,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
@@ -46,11 +47,16 @@ namespace Switcheroo
 {
     public partial class MainWindow : Window
     {
-        private WindowCloser _windowCloser;
-        private List<AppWindowViewModel> _unfilteredWindowList;
-        private ObservableCollection<AppWindowViewModel> _filteredWindowList;
-        private NotifyIcon _notifyIcon;
-        private HotKey _hotkey;
+        private WindowCloser _windowCloser;                                             // Used to close windows
+        private List<AppWindowViewModel> _unfilteredWindowList;                         // All windows
+        private ObservableCollection<AppWindowViewModel> _filteredWindowList;           // Filtered windows
+        private List<ListItemInfo> _unfilteredLinkList;                                 // All links
+        private ObservableCollection<ListItemInfo> _filteredLinkList;                   // Filtered links
+        private NotifyIcon _notifyIcon;                                                 // System tray icon
+        private HotKey _hotkey;                                                         // Hotkey for activating Switcheroo
+        private HotKeyForExecuter _hotkeyForExecuter;                                   // Hotkey for activating Switcheroo
+        private LinkHandler _linkHandler = null;                                        // Link Handler
+        private bool _isLinkMode = false;                                               // Link Mode
 
         public static readonly RoutedUICommand CloseWindowCommand = new RoutedUICommand();
         public static readonly RoutedUICommand SwitchToWindowCommand = new RoutedUICommand();
@@ -73,8 +79,6 @@ namespace Switcheroo
             SetUpHotKey();
 
             SetUpAltTabHook();
-
-            CheckForUpdates();
 
             Opacity = 0;
         }
@@ -138,12 +142,17 @@ namespace Switcheroo
             _hotkey = new HotKey();
             _hotkey.LoadSettings();
 
+            _hotkeyForExecuter = new HotKeyForExecuter();
+            _hotkeyForExecuter.LoadSettings();
+
             Application.Current.Properties["hotkey"] = _hotkey;
 
             _hotkey.HotkeyPressed += hotkey_HotkeyPressed;
+            _hotkeyForExecuter.HotkeyPressed += hotkey_HotkeyForExecuterPressed;
             try
             {
                 _hotkey.Enabled = Settings.Default.EnableHotKey;
+                _hotkeyForExecuter.Enabled = true;
             }
             catch (HotkeyAlreadyInUseException)
             {
@@ -201,68 +210,12 @@ namespace Switcheroo
             }
         }
 
-        private static void CheckForUpdates()
-        {
-            var currentVersion = Assembly.GetEntryAssembly().GetName().Version;
-            if (currentVersion == new Version(0, 0, 0, 0))
-            {
-                return;
-            }
-
-            var timer = new DispatcherTimer();
-
-            timer.Tick += async (sender, args) =>
-            {
-                timer.Stop();
-                var latestVersion = await GetLatestVersion();
-                if (latestVersion != null && latestVersion > currentVersion)
-                {
-                    var result = MessageBox.Show(
-                        string.Format(
-                            "Switcheroo v{0} is available (you have v{1}).\r\n\r\nDo you want to download it?",
-                            latestVersion, currentVersion),
-                        "Update Available", MessageBoxButton.YesNo, MessageBoxImage.Information);
-                    if (result == MessageBoxResult.Yes)
-                    {
-                        Process.Start("https://github.com/kvakulo/Switcheroo/releases/latest");
-                    }
-                }
-                else
-                {
-                    timer.Interval = new TimeSpan(24, 0, 0);
-                    timer.Start();
-                }
-            };
-
-            timer.Interval = new TimeSpan(0, 0, 0);
-            timer.Start();
-        }
-
-        private static async Task<Version> GetLatestVersion()
-        {
-            try
-            {
-                var versionAsString =
-                    await
-                        new WebClient().DownloadStringTaskAsync(
-                            "https://raw.github.com/kvakulo/Switcheroo/update/version.txt");
-                Version newVersion;
-                if (Version.TryParse(versionAsString, out newVersion))
-                {
-                    return newVersion;
-                }
-            }
-            catch (WebException)
-            {
-            }
-            return null;
-        }
-
         /// <summary>
         /// Populates the window list with the current running windows.
         /// </summary>
         private void LoadData(InitialFocus focus)
         {
+            _isLinkMode = false;
             _unfilteredWindowList = new WindowFinder().GetWindows().Select(window => new AppWindowViewModel(window)).ToList();
             foreach (var window in _unfilteredWindowList)
             {
@@ -290,8 +243,8 @@ namespace Switcheroo
             foreach (var window in _unfilteredWindowList)
             {
                 window.FormattedTitle = new XamlHighlighter().Highlight(new[] {new StringPart(window.AppWindow.Title)});
-                window.FormattedProcessTitle =
-                    new XamlHighlighter().Highlight(new[] {new StringPart(window.AppWindow.ProcessTitle)});   
+                window.FormattedSubTitle =
+                    new XamlHighlighter().Highlight(new[] {new StringPart(window.AppWindow.ProcessTitle)});
             }
 
             lb.DataContext = null;
@@ -302,6 +255,33 @@ namespace Switcheroo
             tb.Clear();
             tb.Focus();
             CenterWindow();
+            ScrollSelectedItemIntoView();
+        }
+
+        private void LoadLinkData(InitialFocus focus)
+        {
+            _isLinkMode = true;
+            //if (_linkHandler == null) { _linkHandler = new LinkHandler(); }
+
+            //시작프로그램이 있는 링크들을 가져온다.
+            LinkHandler linkHandler = new LinkHandler();
+            linkHandler.cacheLinks();
+
+            tb.Clear();
+            tb.Focus();
+            CenterWindow();
+
+            _unfilteredLinkList = new List<ListItemInfo>
+            {
+                new ListItemInfo() { FormattedTitle = "Google", FormattedSubTitle = "Google", ImageSource = null }
+            };
+
+            lb.DataContext = null;
+            
+            
+            
+            lb.DataContext = linkHandler.getAllUserLinks();
+            //lb.DataContext = _unfilteredLinkList;
             ScrollSelectedItemIntoView();
         }
 
@@ -355,7 +335,6 @@ namespace Switcheroo
                 var win = (AppWindowViewModel)item;
                 win.AppWindow.SwitchToLastVisibleActivePopup();
             }
-
             HideWindow();
         }
 
@@ -467,6 +446,31 @@ namespace Switcheroo
             }
         }
 
+        private void hotkey_HotkeyForExecuterPressed(object sender, EventArgs e)
+        {
+            if (!Settings.Default.EnableHotKey)
+            {
+                return;
+            }
+
+            if (Visibility != Visibility.Visible)
+            {
+                tb.IsEnabled = true;
+
+                _foregroundWindow = SystemWindow.ForegroundWindow;
+                Show();
+                Activate();
+                Keyboard.Focus(tb);
+                //LoadData(InitialFocus.NextItem);
+                LoadLinkData(InitialFocus.NextItem);
+                Opacity = 1;
+            }
+            else
+            {
+                HideWindow();
+            }
+        }
+
         private void AltTabPressed(object sender, AltTabHookEventArgs e)
         {
             if (!Settings.Default.AltTabHook)
@@ -563,29 +567,34 @@ namespace Switcheroo
                 return;
             }
 
-            var query = tb.Text;
-
-            var context = new WindowFilterContext<AppWindowViewModel>
+            if (!_isLinkMode)
             {
-                Windows = _unfilteredWindowList,
-                ForegroundWindowProcessTitle = new AppWindow(_foregroundWindow.HWnd).ProcessTitle
-            };
+                var query = tb.Text;
+                var context = new WindowFilterContext<AppWindowViewModel>
+                {
+                    Windows = _unfilteredWindowList,
+                    ForegroundWindowProcessTitle = new AppWindow(_foregroundWindow.HWnd).ProcessTitle
+                };
+                var filterResults = new WindowFilterer().Filter(context, query).ToList();
 
-            var filterResults = new WindowFilterer().Filter(context, query).ToList();
+                foreach (var filterResult in filterResults)
+                {
+                    filterResult.AppWindow.FormattedTitle =
+                        GetFormattedTitleFromBestResult(filterResult.WindowTitleMatchResults);
+                    filterResult.AppWindow.FormattedSubTitle =
+                        GetFormattedTitleFromBestResult(filterResult.ProcessTitleMatchResults);
+                }
 
-            foreach (var filterResult in filterResults)
+                _filteredWindowList = new ObservableCollection<AppWindowViewModel>(filterResults.Select(r => r.AppWindow));
+                lb.DataContext = _filteredWindowList;
+                if (lb.Items.Count > 0)
+                {
+                    lb.SelectedItem = lb.Items[0];
+                }
+            } 
+            else
             {
-                filterResult.AppWindow.FormattedTitle =
-                    GetFormattedTitleFromBestResult(filterResult.WindowTitleMatchResults);
-                filterResult.AppWindow.FormattedProcessTitle =
-                    GetFormattedTitleFromBestResult(filterResult.ProcessTitleMatchResults);
-            }
-
-            _filteredWindowList = new ObservableCollection<AppWindowViewModel>(filterResults.Select(r => r.AppWindow));
-            lb.DataContext = _filteredWindowList;
-            if (lb.Items.Count > 0)
-            {
-                lb.SelectedItem = lb.Items[0];
+                
             }
         }
 
