@@ -51,7 +51,7 @@ namespace Switcheroo
         private List<AppWindowViewModel> _unfilteredWindowList;                         // All windows
         private ObservableCollection<AppWindowViewModel> _filteredWindowList;           // Filtered windows
         private List<ListItemInfo> _unfilteredLinkList;                                 // All links
-        private ObservableCollection<ListItemInfo> _filteredLinkList;                   // Filtered links
+        private List<ListItemInfo> _filteredLinkList;                                   // Filtered links
         private NotifyIcon _notifyIcon;                                                 // System tray icon
         private HotKey _hotkey;                                                         // Hotkey for activating Switcheroo
         private HotKeyForExecuter _hotkeyForExecuter;                                   // Hotkey for activating Switcheroo
@@ -261,27 +261,18 @@ namespace Switcheroo
         private void LoadLinkData(InitialFocus focus)
         {
             _isLinkMode = true;
-            //if (_linkHandler == null) { _linkHandler = new LinkHandler(); }
+            if (_linkHandler == null) 
+            { 
+                _linkHandler = new LinkHandler();
+                _linkHandler.cacheLinks();
+            }
+            _unfilteredLinkList = _linkHandler.getAllUserLinks();
 
-            //시작프로그램이 있는 링크들을 가져온다.
-            LinkHandler linkHandler = new LinkHandler();
-            linkHandler.cacheLinks();
+            lb.DataContext = null;
 
             tb.Clear();
             tb.Focus();
             CenterWindow();
-
-            _unfilteredLinkList = new List<ListItemInfo>
-            {
-                new ListItemInfo() { FormattedTitle = "Google", FormattedSubTitle = "Google", ImageSource = null }
-            };
-
-            lb.DataContext = null;
-            
-            
-            
-            lb.DataContext = linkHandler.getAllUserLinks();
-            //lb.DataContext = _unfilteredLinkList;
             ScrollSelectedItemIntoView();
         }
 
@@ -594,7 +585,33 @@ namespace Switcheroo
             } 
             else
             {
-                
+                if (_unfilteredLinkList.Count > 0)
+                {
+                    var query = tb.Text.Trim();
+
+                    if (query.Length > 0)
+                    {
+                        _filteredLinkList = _unfilteredLinkList.Where(
+                                item => item.FormattedTitle.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0 ||
+                                item.FormattedSubTitle.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0)
+                                .ToList();
+
+                        if (_filteredLinkList.Count > 8)
+                        {
+                            _filteredLinkList.RemoveRange(8, _filteredLinkList.Count - 8);
+                        }
+
+                        lb.DataContext = _filteredLinkList;
+                        if (lb.Items.Count > 0)
+                        {
+                            lb.SelectedItem = lb.Items[0];
+                        }
+                    }
+                    else
+                    {
+                        lb.DataContext = null;
+                    }
+                }
             }
         }
 
