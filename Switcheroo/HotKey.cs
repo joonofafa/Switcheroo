@@ -45,22 +45,21 @@ namespace Switcheroo
     public class HotKeyForExecuter : ManagedWinapi.Hotkey {
         public void LoadSettings()
         {
-            KeyCode = System.Windows.Forms.Keys.K;
-            WindowsKey = Properties.Settings.Default.WindowsKey;
-            Alt = Properties.Settings.Default.Alt;
-            Ctrl = Properties.Settings.Default.Ctrl;
-            Shift = Properties.Settings.Default.Shift;
+            KeyCode = (System.Windows.Forms.Keys)Properties.Settings.Default.LnkHotKey;
+            WindowsKey = Properties.Settings.Default.LnkWindowsKey;
+            Alt = Properties.Settings.Default.LnkAlt;
+            Ctrl = Properties.Settings.Default.LnkCtrl;
+            Shift = Properties.Settings.Default.LnkShift;
         }
 
         public void SaveSettings()
         {
-            /*
-            Properties.Settings.Default.HotKey = (int)KeyCode;
-            Properties.Settings.Default.WindowsKey = WindowsKey;
-            Properties.Settings.Default.Alt = Alt;
-            Properties.Settings.Default.Ctrl = Ctrl;
-            Properties.Settings.Default.Shift = Shift;
-            Properties.Settings.Default.Save();*/
+            Properties.Settings.Default.LnkHotKey = (int)KeyCode;
+            Properties.Settings.Default.LnkWindowsKey = WindowsKey;
+            Properties.Settings.Default.LnkAlt = Alt;
+            Properties.Settings.Default.LnkCtrl = Ctrl;
+            Properties.Settings.Default.LnkShift = Shift;
+            Properties.Settings.Default.Save();
         }
     }
 }

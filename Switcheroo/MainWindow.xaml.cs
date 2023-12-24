@@ -157,18 +157,19 @@ namespace Switcheroo
         {
             _hotkey = new HotKey();
             _hotkey.LoadSettings();
-
+            
             _hotkeyForExecuter = new HotKeyForExecuter();
             _hotkeyForExecuter.LoadSettings();
 
             Application.Current.Properties["hotkey"] = _hotkey;
+            Application.Current.Properties["lnkHotkey"] = _hotkeyForExecuter;
 
             _hotkey.HotkeyPressed += hotkey_HotkeyPressed;
             _hotkeyForExecuter.HotkeyPressed += hotkey_HotkeyForExecuterPressed;
             try
             {
                 _hotkey.Enabled = Settings.Default.EnableHotKey;
-                _hotkeyForExecuter.Enabled = true;
+                _hotkeyForExecuter.Enabled = Settings.Default.EnableLnkHotkey;
             }
             catch (HotkeyAlreadyInUseException)
             {
@@ -471,7 +472,8 @@ namespace Switcheroo
 
         private void hotkey_HotkeyForExecuterPressed(object sender, EventArgs e)
         {
-            if (!Settings.Default.EnableHotKey)
+            Trace.WriteLine("Called hotkey_HotkeyForExecuterPressed()!");
+            if (!Settings.Default.EnableLnkHotkey)
             {
                 return;
             }
@@ -484,7 +486,6 @@ namespace Switcheroo
                 Show();
                 Activate();
                 Keyboard.Focus(tb);
-                //LoadData(InitialFocus.NextItem);
                 LoadLinkData(InitialFocus.NextItem);
                 Opacity = 1;
             }

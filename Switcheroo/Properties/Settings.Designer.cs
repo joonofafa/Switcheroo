@@ -12,7 +12,7 @@ namespace Switcheroo.Properties {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "17.0.3.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "17.7.0.0")]
     internal sealed partial class Settings : global::System.Configuration.ApplicationSettingsBase {
         
         private static Settings defaultInstance = ((Settings)(global::System.Configuration.ApplicationSettingsBase.Synchronized(new Settings())));
@@ -142,19 +142,76 @@ namespace Switcheroo.Properties {
                 this["EnableHotKey"] = value;
             }
         }
-
+        
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("75")]
-        public int HotKeyForExecuter
-        {
-            get
-            {
-                return ((int)(this["HotKey"]));
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool LnkCtrl {
+            get {
+                return ((bool)(this["LnkCtrl"]));
             }
-            set
-            {
-                this["HotKey"] = value;
+            set {
+                this["LnkCtrl"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool LnkShift {
+            get {
+                return ((bool)(this["LnkShift"]));
+            }
+            set {
+                this["LnkShift"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool LnkWindowsKey {
+            get {
+                return ((bool)(this["LnkWindowsKey"]));
+            }
+            set {
+                this["LnkWindowsKey"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("79")]
+        public int LnkHotKey {
+            get {
+                return ((int)(this["LnkHotKey"]));
+            }
+            set {
+                this["LnkHotKey"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool LnkAlt {
+            get {
+                return ((bool)(this["LnkAlt"]));
+            }
+            set {
+                this["LnkAlt"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool EnableLnkHotkey {
+            get {
+                return ((bool)(this["EnableLnkHotkey"]));
+            }
+            set {
+                this["EnableLnkHotkey"] = value;
             }
         }
     }

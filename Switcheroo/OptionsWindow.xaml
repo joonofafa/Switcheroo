@@ -11,11 +11,18 @@
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
         <StackPanel Margin="5,5,5,5">
-            <CheckBox Name="HotKeyCheckBox" Margin="5,5,5,1" Checked="HotKeyCheckBox_Checked" Unchecked="HotKeyCheckBox_OnUnchecked">Activate Switcheroo with this shortcut:</CheckBox>
+            <CheckBox Name="HotKeyCheckBox" Margin="5,5,5,1" Checked="HotKeyCheckBox_Checked" Unchecked="HotKeyCheckBox_OnUnchecked">Activate Switcheroo with current task for handling :</CheckBox>
             <TextBox Name="HotkeyPreview" Margin="25,5,0,10"
                      PreviewKeyDown="HotkeyPreview_OnPreviewKeyDown"
                      GotFocus="HotkeyPreview_OnGotFocus"
                      LostFocus="HotkeyPreview_OnLostFocus"
+                     Width="150"
+                     HorizontalAlignment="Left"/>
+            <CheckBox Name="LnkHotKeyCheckBok" Margin="5,5,5,1" Checked="LnkHotKeyCheckBox_Checked" Unchecked="LnkHotKeyCheckBox_OnUnchecked">Activate Switcheroo with executable programs :</CheckBox>
+            <TextBox Name="LnkHotkeyPreview" Margin="25,5,0,10"
+                     PreviewKeyDown="LnkHotkeyPreview_OnPreviewKeyDown"
+                     GotFocus="LnkHotkeyPreview_OnGotFocus"
+                     LostFocus="LnkHotkeyPreview_OnLostFocus"
                      Width="150"
                      HorizontalAlignment="Left"/>
             <CheckBox Name="AltTabCheckBox" Checked="AltTabCheckBox_OnChecked" Unchecked="AltTabCheckBox_OnUnchecked" Margin="5,5,5,1">Activate Switcheroo with Alt+Tab</CheckBox>

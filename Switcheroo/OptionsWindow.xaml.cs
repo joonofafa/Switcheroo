@@ -34,18 +34,22 @@ namespace Switcheroo
     public partial class OptionsWindow : Window
     {
         private readonly HotKey _hotkey;
+        private readonly HotKeyForExecuter _lnkHotkey;
         private HotkeyViewModel _hotkeyViewModel;
+        private HotkeyViewModel _lnkHotkeyViewModel;
 
         public OptionsWindow()
         {
             InitializeComponent();
 
             // Show what's already selected     
-            _hotkey = (HotKey) Application.Current.Properties["hotkey"];
+            _hotkey = (HotKey)Application.Current.Properties["hotkey"];
+            _lnkHotkey = (HotKeyForExecuter)Application.Current.Properties["lnkHotkey"];
 
             try
             {
                 _hotkey.LoadSettings();
+                _lnkHotkey.LoadSettings();
             }
             catch (HotkeyAlreadyInUseException)
             {
@@ -53,16 +57,27 @@ namespace Switcheroo
 
             _hotkeyViewModel = new HotkeyViewModel
             {
-                KeyCode = KeyInterop.KeyFromVirtualKey((int) _hotkey.KeyCode),
+                KeyCode = KeyInterop.KeyFromVirtualKey((int)_hotkey.KeyCode),
                 Alt = _hotkey.Alt,
                 Ctrl = _hotkey.Ctrl,
                 Windows = _hotkey.WindowsKey,
                 Shift = _hotkey.Shift
             };
+            _lnkHotkeyViewModel = new HotkeyViewModel
+            {
+                KeyCode = KeyInterop.KeyFromVirtualKey((int)_lnkHotkey.KeyCode),
+                Alt = _lnkHotkey.Alt,
+                Ctrl = _lnkHotkey.Ctrl,
+                Windows = _lnkHotkey.WindowsKey,
+                Shift = _lnkHotkey.Shift
+            };
 
             HotKeyCheckBox.IsChecked = Settings.Default.EnableHotKey;
+            LnkHotKeyCheckBok.IsChecked = Settings.Default.EnableLnkHotkey;
             HotkeyPreview.Text = _hotkeyViewModel.ToString();
+            LnkHotkeyPreview.Text = _lnkHotkeyViewModel.ToString();
             HotkeyPreview.IsEnabled = Settings.Default.EnableHotKey;
+            LnkHotkeyPreview.IsEnabled = Settings.Default.EnableLnkHotkey;
             AltTabCheckBox.IsChecked = Settings.Default.AltTabHook;
             AutoSwitch.IsChecked = Settings.Default.AutoSwitch;
             AutoSwitch.IsEnabled = Settings.Default.AltTabHook;
@@ -81,10 +96,10 @@ namespace Switcheroo
             try
             {
                 _hotkey.Enabled = false;
+                _lnkHotkey.Enabled = false;
 
                 if (Settings.Default.EnableHotKey)
                 {
-                    // Change the active hotkey
                     _hotkey.Alt = _hotkeyViewModel.Alt;
                     _hotkey.Shift = _hotkeyViewModel.Shift;
                     _hotkey.Ctrl = _hotkeyViewModel.Ctrl;
@@ -93,7 +108,18 @@ namespace Switcheroo
                     _hotkey.Enabled = true;
                 }
 
+                if (Settings.Default.EnableLnkHotkey) 
+                { 
+                    _lnkHotkey.Alt = _lnkHotkeyViewModel.Alt;
+                    _lnkHotkey.Shift = _lnkHotkeyViewModel.Shift;
+                    _lnkHotkey.Ctrl = _lnkHotkeyViewModel.Ctrl;
+                    _lnkHotkey.WindowsKey = _lnkHotkeyViewModel.Windows;
+                    _lnkHotkey.KeyCode = (Keys)KeyInterop.VirtualKeyFromKey(_lnkHotkeyViewModel.KeyCode);
+                    _lnkHotkey.Enabled = true;
+                }
+
                 _hotkey.SaveSettings();
+                _lnkHotkey.SaveSettings();
             }
             catch (HotkeyAlreadyInUseException)
             {
@@ -104,6 +130,7 @@ namespace Switcheroo
             }
 
             Settings.Default.EnableHotKey = HotKeyCheckBox.IsChecked.GetValueOrDefault();
+            Settings.Default.EnableLnkHotkey = LnkHotKeyCheckBok.IsChecked.GetValueOrDefault();
             Settings.Default.AltTabHook = AltTabCheckBox.IsChecked.GetValueOrDefault();
             Settings.Default.AutoSwitch = AutoSwitch.IsChecked.GetValueOrDefault();
             Settings.Default.RunAsAdmin = RunAsAdministrator.IsChecked.GetValueOrDefault();
@@ -113,46 +140,6 @@ namespace Switcheroo
             {
                 Close();
             }
-        }
-
-        private void HotkeyPreview_OnPreviewKeyDown(object sender, KeyEventArgs e)
-        {
-            // The text box grabs all input
-            e.Handled = true;
-
-            // Fetch the actual shortcut key
-            var key = (e.Key == Key.System ? e.SystemKey : e.Key);
-
-            // Ignore modifier keys
-            if (key == Key.LeftShift || key == Key.RightShift
-                || key == Key.LeftCtrl || key == Key.RightCtrl
-                || key == Key.LeftAlt || key == Key.RightAlt
-                || key == Key.LWin || key == Key.RWin)
-            {
-                return;
-            }
-
-            var previewHotkeyModel = new HotkeyViewModel();
-            previewHotkeyModel.Ctrl = (Keyboard.Modifiers & ModifierKeys.Control) != 0;
-            previewHotkeyModel.Shift = (Keyboard.Modifiers & ModifierKeys.Shift) != 0;
-            previewHotkeyModel.Alt = (Keyboard.Modifiers & ModifierKeys.Alt) != 0;
-
-            var winLKey = new KeyboardKey(Keys.LWin);
-            var winRKey = new KeyboardKey(Keys.RWin);
-            previewHotkeyModel.Windows = (winLKey.State & 0x8000) == 0x8000 || (winRKey.State & 0x8000) == 0x8000;
-            previewHotkeyModel.KeyCode = key;
-
-            var previewText = previewHotkeyModel.ToString();
-
-            // Jump to the next element if the user presses only the Tab key
-            if (previewText == "Tab")
-            {
-                ((UIElement) sender).MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
-                return;
-            }
-
-            HotkeyPreview.Text = previewText;
-            _hotkeyViewModel = previewHotkeyModel;
         }
 
         private class HotkeyViewModel
@@ -205,6 +192,45 @@ namespace Switcheroo
             }
         }
 
+        private void HotkeyPreview_OnPreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            // The text box grabs all input
+            e.Handled = true;
+
+            // Fetch the actual shortcut key
+            var key = (e.Key == Key.System ? e.SystemKey : e.Key);
+
+            // Ignore modifier keys
+            if (key == Key.LeftShift || key == Key.RightShift
+                || key == Key.LeftCtrl || key == Key.RightCtrl
+                || key == Key.LeftAlt || key == Key.RightAlt
+                || key == Key.LWin || key == Key.RWin)
+            {
+                return;
+            }
+
+            var previewHotkeyModel = new HotkeyViewModel();
+            previewHotkeyModel.Ctrl = (Keyboard.Modifiers & ModifierKeys.Control) != 0;
+            previewHotkeyModel.Shift = (Keyboard.Modifiers & ModifierKeys.Shift) != 0;
+            previewHotkeyModel.Alt = (Keyboard.Modifiers & ModifierKeys.Alt) != 0;
+
+            var winLKey = new KeyboardKey(Keys.LWin);
+            var winRKey = new KeyboardKey(Keys.RWin);
+            previewHotkeyModel.Windows = (winLKey.State & 0x8000) == 0x8000 || (winRKey.State & 0x8000) == 0x8000;
+            previewHotkeyModel.KeyCode = key;
+
+            var previewText = previewHotkeyModel.ToString();
+
+            // Jump to the next element if the user presses only the Tab key
+            if (previewText == "Tab")
+            {
+                ((UIElement)sender).MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
+                return;
+            }
+
+            HotkeyPreview.Text = previewText;
+            _hotkeyViewModel = previewHotkeyModel;
+        }
         private void HotkeyPreview_OnGotFocus(object sender, RoutedEventArgs e)
         {
             // Disable the current hotkey while the hotkey field is active
@@ -216,6 +242,64 @@ namespace Switcheroo
             try
             {
                 _hotkey.Enabled = true;
+            }
+            catch (HotkeyAlreadyInUseException)
+            {
+                // It is alright if the hotkey can't be reactivated.
+            }
+        }
+
+        private void LnkHotkeyPreview_OnPreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            // The text box grabs all input
+            e.Handled = true;
+
+            // Fetch the actual shortcut key
+            var key = (e.Key == Key.System ? e.SystemKey : e.Key);
+
+            // Ignore modifier keys
+            if (key == Key.LeftShift || key == Key.RightShift
+                || key == Key.LeftCtrl || key == Key.RightCtrl
+                || key == Key.LeftAlt || key == Key.RightAlt
+                || key == Key.LWin || key == Key.RWin)
+            {
+                return;
+            }
+
+            var previewHotkeyModel = new HotkeyViewModel();
+            previewHotkeyModel.Ctrl = (Keyboard.Modifiers & ModifierKeys.Control) != 0;
+            previewHotkeyModel.Shift = (Keyboard.Modifiers & ModifierKeys.Shift) != 0;
+            previewHotkeyModel.Alt = (Keyboard.Modifiers & ModifierKeys.Alt) != 0;
+
+            var winLKey = new KeyboardKey(Keys.LWin);
+            var winRKey = new KeyboardKey(Keys.RWin);
+            previewHotkeyModel.Windows = (winLKey.State & 0x8000) == 0x8000 || (winRKey.State & 0x8000) == 0x8000;
+            previewHotkeyModel.KeyCode = key;
+
+            var previewText = previewHotkeyModel.ToString();
+
+            // Jump to the next element if the user presses only the Tab key
+            if (previewText == "Tab")
+            {
+                ((UIElement)sender).MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
+                return;
+            }
+
+            LnkHotkeyPreview.Text = previewText;
+            _lnkHotkeyViewModel = previewHotkeyModel;
+        }
+
+        private void LnkHotkeyPreview_OnGotFocus(object sender, RoutedEventArgs e)
+        {
+            // Disable the current hotkey while the hotkey field is active
+            _lnkHotkey.Enabled = false;
+        }
+
+        private void LnkHotkeyPreview_OnLostFocus(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                _lnkHotkey.Enabled = true;
             }
             catch (HotkeyAlreadyInUseException)
             {
@@ -242,6 +326,16 @@ namespace Switcheroo
         private void HotKeyCheckBox_OnUnchecked(object sender, RoutedEventArgs e)
         {
             HotkeyPreview.IsEnabled = false;
+        }
+
+        private void LnkHotKeyCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            LnkHotkeyPreview.IsEnabled = true;
+        }
+
+        private void LnkHotKeyCheckBox_OnUnchecked(object sender, RoutedEventArgs e)
+        {
+            LnkHotkeyPreview.IsEnabled = false;
         }
     }
 }
