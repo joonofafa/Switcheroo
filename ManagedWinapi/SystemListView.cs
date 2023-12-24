@@ -19,18 +19,15 @@
  */
 using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Windows.Forms;
-using System.Runtime.InteropServices;
 using System.Drawing;
+using System.Runtime.InteropServices;
+using System.Text;
 
-namespace ManagedWinapi.Windows
-{
+namespace ManagedWinapi.Windows {
     /// <summary>
     /// Any list view, including those from other applications.
     /// </summary>
-    public class SystemListView
-    {
+    public class SystemListView {
         /// <summary>
         /// Get a SystemListView reference from a SystemWindow (which is a list view)
         /// </summary>
@@ -151,8 +148,7 @@ namespace ManagedWinapi.Windows
             LVCF_SUBITEM = 0x8;
 
         [StructLayout(LayoutKind.Sequential)]
-        private struct LVCOLUMN
-        {
+        private struct LVCOLUMN {
             public UInt32 mask;
             public Int32 fmt;
             public Int32 cx;
@@ -162,8 +158,7 @@ namespace ManagedWinapi.Windows
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        private struct LVITEM
-        {
+        private struct LVITEM {
             public UInt32 mask;
             public Int32 iItem;
             public Int32 iSubItem;
@@ -180,8 +175,7 @@ namespace ManagedWinapi.Windows
     /// <summary>
     /// An item of a list view.
     /// </summary>
-    public class SystemListViewItem
-    {
+    public class SystemListViewItem {
         readonly string title;
         readonly uint state;
         readonly int image, index;
@@ -249,8 +243,7 @@ namespace ManagedWinapi.Windows
     /// <summary>
     /// A column of a list view.
     /// </summary>
-    public class SystemListViewColumn
-    {
+    public class SystemListViewColumn {
         readonly int format;
         readonly int width;
         readonly int subIndex;

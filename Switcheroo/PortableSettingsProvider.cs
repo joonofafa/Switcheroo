@@ -26,12 +26,10 @@ using System.IO;
 using System.Windows.Forms;
 using System.Xml;
 
-namespace Switcheroo
-{
+namespace Switcheroo {
     // From https://github.com/crdx/PortableSettingsProvider
     // MIT License
-    public sealed class PortableSettingsProvider : SettingsProvider, IApplicationSettingsProvider
-    {
+    public sealed class PortableSettingsProvider : SettingsProvider, IApplicationSettingsProvider {
         private const string _rootNodeName = "settings";
         private const string _localSettingsNodeName = "localSettings";
         private const string _globalSettingsNodeName = "globalSettings";
@@ -190,7 +188,7 @@ namespace Switcheroo
         {
             foreach (DictionaryEntry attribute in property.Attributes)
             {
-                if ((Attribute) attribute.Value is SettingsManageabilityAttribute)
+                if ((Attribute)attribute.Value is SettingsManageabilityAttribute)
                     return true;
             }
 

@@ -18,25 +18,21 @@
  * along with Switcheroo.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-using System;
-using System.Diagnostics;
-using System.Windows.Forms;
 using ManagedWinapi;
 using ManagedWinapi.Hooks;
+using System;
+using System.Windows.Forms;
 
-namespace Switcheroo
-{
+namespace Switcheroo {
     public delegate void AltTabHookEventHandler(object sender, AltTabHookEventArgs args);
 
-    public class AltTabHookEventArgs : EventArgs
-    {
+    public class AltTabHookEventArgs : EventArgs {
         public bool CtrlDown { get; set; }
         public bool ShiftDown { get; set; }
         public bool Handled { get; set; }
     }
 
-    public class AltTabHook : IDisposable
-    {
+    public class AltTabHook : IDisposable {
         public event AltTabHookEventHandler Pressed;
         private const int AltKey = 32;
         private const int CtrlKey = 11;
@@ -89,7 +85,7 @@ namespace Switcheroo
 
         private bool IsTabKeyDown(LowLevelKeyboardMessage keyboardMessage)
         {
-            return keyboardMessage.VirtualKeyCode == (int) Keys.Tab &&
+            return keyboardMessage.VirtualKeyCode == (int)Keys.Tab &&
                    (keyboardMessage.Message == WM_KEYDOWN || keyboardMessage.Message == WM_SYSKEYDOWN);
         }
 

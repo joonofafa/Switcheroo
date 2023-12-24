@@ -23,12 +23,10 @@ using System.Diagnostics;
 using System.Text;
 using System.Windows.Forms;
 
-namespace Switcheroo.Core
-{
+namespace Switcheroo.Core {
     // Convert a keycode to the relevant display character
     // http://stackoverflow.com/a/375047/198065
-    public class KeyboardHelper
-    {
+    public class KeyboardHelper {
         public static string CodeToString(uint virtualKey)
         {
             uint procId;

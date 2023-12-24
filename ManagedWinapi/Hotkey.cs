@@ -17,23 +17,19 @@
  * http://www.gnu.org/licenses/lgpl.html or write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.ComponentModel;
-using System.Windows.Forms;
-using System.Runtime.InteropServices;
 using ManagedWinapi.Windows;
+using System;
+using System.ComponentModel;
+using System.Runtime.InteropServices;
+using System.Windows.Forms;
 
-namespace ManagedWinapi
-{
+namespace ManagedWinapi {
 
     /// <summary>
     /// Specifies a component that creates a global keyboard hotkey.
     /// </summary>
     [DefaultEvent("HotkeyPressed")]
-    public class Hotkey : Component
-    {
+    public class Hotkey : Component {
 
         /// <summary>
         /// Occurs when the hotkey is pressed.
@@ -61,10 +57,10 @@ namespace ManagedWinapi
         /// <summary>
         /// Initializes a new instance of this class.
         /// </summary>
-        public Hotkey() 
+        public Hotkey()
         {
             EventDispatchingNativeWindow.Instance.EventHandler += nw_EventHandler;
-            lock(myStaticLock) 
+            lock (myStaticLock)
             {
                 hotkeyIndex = ++hotkeyCounter;
             }
@@ -109,35 +105,39 @@ namespace ManagedWinapi
         /// <summary>
         /// Whether the shortcut includes the Control modifier.
         /// </summary>
-        public bool Ctrl {
+        public bool Ctrl
+        {
             get { return _ctrl; }
-            set {_ctrl = value; updateHotkey(true);}
+            set { _ctrl = value; updateHotkey(true); }
         }
 
         /// <summary>
         /// Whether this shortcut includes the Alt modifier.
         /// </summary>
-        public bool Alt {
+        public bool Alt
+        {
             get { return _alt; }
-            set {_alt = value; updateHotkey(true);}
-        }     
-   
+            set { _alt = value; updateHotkey(true); }
+        }
+
         /// <summary>
         /// Whether this shortcut includes the shift modifier.
         /// </summary>
-        public bool Shift {
+        public bool Shift
+        {
             get { return _shift; }
-            set {_shift = value; updateHotkey(true);}
+            set { _shift = value; updateHotkey(true); }
         }
-        
+
         /// <summary>
         /// Whether this shortcut includes the Windows key modifier. The windows key
         /// is an addition by Microsoft to the keyboard layout. It is located between
         /// Control and Alt and depicts a Windows flag.
         /// </summary>
-        public bool WindowsKey {
+        public bool WindowsKey
+        {
             get { return _windows; }
-            set {_windows = value; updateHotkey(true);}
+            set { _windows = value; updateHotkey(true); }
         }
 
         void nw_EventHandler(ref Message m, ref bool handled)
@@ -175,7 +175,7 @@ namespace ManagedWinapi
             if (!isRegistered && shouldBeRegistered)
             {
                 // register hotkey
-                bool success = RegisterHotKey(hWnd, hotkeyIndex, 
+                bool success = RegisterHotKey(hWnd, hotkeyIndex,
                     (_shift ? MOD_SHIFT : 0) + (_ctrl ? MOD_CONTROL : 0) +
                     (_alt ? MOD_ALT : 0) + (_windows ? MOD_WIN : 0), (int)_keyCode);
                 if (!success) throw new HotkeyAlreadyInUseException();
@@ -185,9 +185,9 @@ namespace ManagedWinapi
 
         #region PInvoke Declarations
 
-        [DllImport("user32.dll", SetLastError=true)]
+        [DllImport("user32.dll", SetLastError = true)]
         private static extern bool RegisterHotKey(IntPtr hWnd, int id, int fsModifiers, int vlc);
-        [DllImport("user32.dll", SetLastError=true)]
+        [DllImport("user32.dll", SetLastError = true)]
         private static extern bool UnregisterHotKey(IntPtr hWnd, int id);
 
         private static readonly int MOD_ALT = 0x0001,

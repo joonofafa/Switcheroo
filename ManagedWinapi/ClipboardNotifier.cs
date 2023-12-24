@@ -17,23 +17,17 @@
  * http://www.gnu.org/licenses/lgpl.html or write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
+using ManagedWinapi.Windows;
 using System;
 using System.ComponentModel;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Text;
-using ManagedWinapi.Windows;
 using System.Runtime.InteropServices;
-using Microsoft.Win32;
 
-namespace ManagedWinapi
-{
+namespace ManagedWinapi {
     /// <summary>
     /// Specifies a component that monitors the system clipboard for changes.
     /// </summary>
     [DefaultEvent("ClipboardChanged")]
-    public class ClipboardNotifier : Component
-    {
+    public class ClipboardNotifier : Component {
 
         /// <summary>
         /// Occurs when the clipboard contents have changed.
@@ -123,8 +117,8 @@ namespace ManagedWinapi
         [DllImport("user32.dll", CharSet = CharSet.Auto)]
         private static extern int SendMessage(IntPtr hwnd, int wMsg, IntPtr wParam, IntPtr lParam);
 
-        private static readonly int 
-            WM_DRAWCLIPBOARD = 0x0308, 
+        private static readonly int
+            WM_DRAWCLIPBOARD = 0x0308,
             WM_CHANGECBCHAIN = 0x030D;
 
         #endregion

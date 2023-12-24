@@ -17,24 +17,22 @@
  * http://www.gnu.org/licenses/lgpl.html or write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
+using ManagedWinapi.Windows.Contents;
 using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Runtime.InteropServices;
-using System.Windows.Forms;
 using System.Diagnostics;
 using System.Drawing;
-using ManagedWinapi.Windows.Contents;
+using System.Runtime.InteropServices;
+using System.Text;
+using System.Windows.Forms;
 
-namespace ManagedWinapi.Windows
-{
+namespace ManagedWinapi.Windows {
     /// <summary>
     /// Window Style Flags. The original constants started with WS_.
     /// </summary>
     /// <seealso cref="SystemWindow.Style"/>
     [Flags]
-    public enum WindowStyleFlags : long
-    {
+    public enum WindowStyleFlags : long {
         /// <summary>
         /// WS_OVERLAPPED
         /// </summary>
@@ -182,8 +180,7 @@ namespace ManagedWinapi.Windows
     /// </summary>
     /// <seealso cref="SystemWindow.ExtendedStyle"/>
     [Flags]
-    public enum WindowExStyleFlags : uint
-    {
+    public enum WindowExStyleFlags : uint {
         /// <summary>
         /// Specifies that a window created with this style accepts drag-drop files.
         /// </summary>
@@ -298,8 +295,7 @@ namespace ManagedWinapi.Windows
     /// <summary>
     /// Represents any window used by Windows, including those from other applications.
     /// </summary>
-    public class SystemWindow
-    {
+    public class SystemWindow {
 
         private static readonly Predicate<SystemWindow> ALL = delegate { return true; };
 
@@ -351,7 +347,7 @@ namespace ManagedWinapi.Windows
         public static SystemWindow[] FilterToplevelWindows(Predicate<SystemWindow> predicate)
         {
             List<SystemWindow> wnds = new List<SystemWindow>();
-            EnumWindows(new EnumWindowsProc(delegate(IntPtr hwnd, IntPtr lParam)
+            EnumWindows(new EnumWindowsProc(delegate (IntPtr hwnd, IntPtr lParam)
             {
                 SystemWindow tmp = new SystemWindow(hwnd);
                 if (predicate(tmp))
@@ -474,7 +470,7 @@ namespace ManagedWinapi.Windows
         public SystemWindow[] FilterDescendantWindows(bool directOnly, Predicate<SystemWindow> predicate)
         {
             List<SystemWindow> wnds = new List<SystemWindow>();
-            EnumChildWindows(_hwnd, delegate(IntPtr hwnd, IntPtr lParam)
+            EnumChildWindows(_hwnd, delegate (IntPtr hwnd, IntPtr lParam)
             {
                 SystemWindow tmp = new SystemWindow(hwnd);
                 bool add = true;
@@ -600,26 +596,26 @@ namespace ManagedWinapi.Windows
             }
         }
 
-		private bool _isClosed = false;
-		public bool IsClosed
-		{
-			get
-			{
-				_isClosed = _isClosed || GetClassNameFails();
-				return _isClosed;
-			}
-		}
+        private bool _isClosed = false;
+        public bool IsClosed
+        {
+            get
+            {
+                _isClosed = _isClosed || GetClassNameFails();
+                return _isClosed;
+            }
+        }
 
-		private bool GetClassNameFails()
-		{
-			StringBuilder builder = new StringBuilder( 2 );
-			return GetClassName( HWnd, builder, builder.Capacity ) == 0;
-		}
+        private bool GetClassNameFails()
+        {
+            StringBuilder builder = new StringBuilder(2);
+            return GetClassName(HWnd, builder, builder.Capacity) == 0;
+        }
 
-		public bool IsClosedOrHidden
-		{
-			get { return IsClosed || !Visible; }
-		}
+        public bool IsClosedOrHidden
+        {
+            get { return IsClosed || !Visible; }
+        }
 
         /// <summary>
         /// Returns or sets the visibility flag.
@@ -1243,8 +1239,7 @@ namespace ManagedWinapi.Windows
         [DllImport("user32.dll", EntryPoint = "GetWindowLongPtr")]
         private static extern IntPtr GetWindowLongPtr64(IntPtr hWnd, int nIndex);
 
-        private enum GWL : int
-        {
+        private enum GWL : int {
             GWL_WNDPROC = (-4),
             GWL_HINSTANCE = (-6),
             GWL_HWNDPARENT = (-8),
@@ -1264,8 +1259,7 @@ namespace ManagedWinapi.Windows
         static extern bool IsChild(IntPtr hWndParent, IntPtr hWnd);
 
         [StructLayout(LayoutKind.Sequential)]
-        private struct WINDOWPLACEMENT
-        {
+        private struct WINDOWPLACEMENT {
             public int length;
             public int flags;
             public int showCmd;
@@ -1333,8 +1327,7 @@ namespace ManagedWinapi.Windows
         [DllImport("gdi32.dll", ExactSpelling = true, SetLastError = true)]
         static extern bool DeleteObject(IntPtr hObject);
 
-        enum TernaryRasterOperations : uint
-        {
+        enum TernaryRasterOperations : uint {
             SRCCOPY = 0x00CC0020,
             SRCPAINT = 0x00EE0086,
             SRCAND = 0x008800C6,
@@ -1352,8 +1345,7 @@ namespace ManagedWinapi.Windows
             WHITENESS = 0x00FF0062
         }
 
-        enum GetWindowRegnReturnValues : int
-        {
+        enum GetWindowRegnReturnValues : int {
             ERROR = 0,
             NULLREGION = 1,
             SIMPLEREGION = 2,
@@ -1389,8 +1381,7 @@ namespace ManagedWinapi.Windows
 
         private IntPtr SC_CLOSE = new IntPtr(61536);
 
-        private enum GetWindow_Cmd
-        {
+        private enum GetWindow_Cmd {
             GW_HWNDFIRST = 0,
             GW_HWNDLAST = 1,
             GW_HWNDNEXT = 2,
@@ -1403,8 +1394,7 @@ namespace ManagedWinapi.Windows
         [DllImport("user32.dll")]
         private static extern bool InvalidateRect(IntPtr hWnd, IntPtr lpRect, bool bErase);
 
-        private enum RDW : uint
-        {
+        private enum RDW : uint {
             RDW_INVALIDATE = 0x0001,
             RDW_INTERNALPAINT = 0x0002,
             RDW_ERASE = 0x0004,
@@ -1432,8 +1422,7 @@ namespace ManagedWinapi.Windows
     /// <summary>
     /// A device context of a window that allows you to draw onto that window.
     /// </summary>
-    public class WindowDeviceContext : IDisposable
-    {
+    public class WindowDeviceContext : IDisposable {
         IntPtr hDC;
         SystemWindow sw;
 

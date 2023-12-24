@@ -18,12 +18,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Windows.Forms;
 
-namespace ManagedWinapi.Windows
-{
+namespace ManagedWinapi.Windows {
 
     /// <summary>
     /// Called by an EventDispatchingNativeWindow when a window message is received
@@ -40,8 +37,7 @@ namespace ManagedWinapi.Windows
     /// components can use the same native window to save "USER resources". This class
     /// is useful when writing your own components.
     /// </summary>
-    public class EventDispatchingNativeWindow : NativeWindow
-    {
+    public class EventDispatchingNativeWindow : NativeWindow {
 
         private static Object myLock = new Object();
         private static EventDispatchingNativeWindow _instance;

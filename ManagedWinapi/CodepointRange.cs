@@ -1,16 +1,14 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Drawing;
 using System.Runtime.InteropServices;
+using System.Text;
 
-namespace ManagedWinapi
-{
+namespace ManagedWinapi {
     /// <summary>
     /// The unicode range of codepoints supported by a font.
     /// </summary>
-    public class CodepointRange
-    {
+    public class CodepointRange {
         char[] ranges;
         readonly int codepointCount;
 

@@ -1,12 +1,10 @@
-﻿using System.Linq;
-using NUnit.Framework;
+﻿using NUnit.Framework;
 using Switcheroo.Core.Matchers;
+using System.Linq;
 
-namespace Switcheroo.Core.UnitTests
-{
+namespace Switcheroo.Core.UnitTests {
     [TestFixture]
-    public class StartsWithMatcherTests
-    {
+    public class StartsWithMatcherTests {
         [Test]
         public void Evaluate_InputStartsWithPattern_ResultIsMatched()
         {

@@ -18,21 +18,17 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Drawing;
-using System.Runtime.InteropServices;
-using System.IO;
 using System.ComponentModel;
+using System.Drawing;
+using System.IO;
+using System.Runtime.InteropServices;
 
-namespace ManagedWinapi
-{
+namespace ManagedWinapi {
     /// <summary>
     /// Provides methods for getting additional information about
     /// files, like icons or compressed file size.
     /// </summary>
-    public sealed class ExtendedFileInfo
-    {
+    public sealed class ExtendedFileInfo {
         /// <summary>
         /// Get the icon used for folders.
         /// </summary>
@@ -162,8 +158,7 @@ namespace ManagedWinapi
                                     uint uFlags);
 
         [StructLayout(LayoutKind.Sequential)]
-        private struct SHFILEINFO
-        {
+        private struct SHFILEINFO {
             public IntPtr hIcon;
             public IntPtr iIcon;
             public uint dwAttributes;

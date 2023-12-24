@@ -1,9 +1,7 @@
 ﻿using System.Text.RegularExpressions;
 
-namespace Switcheroo.Core.Matchers
-{
-    public class IndividualCharactersMatcher : IMatcher
-    {
+namespace Switcheroo.Core.Matchers {
+    public class IndividualCharactersMatcher : IMatcher {
         public MatchResult Evaluate(string input, string pattern)
         {
             if (input == null || pattern == null)
@@ -26,7 +24,7 @@ namespace Switcheroo.Core.Matchers
                 var group = match.Groups[groupIndex];
                 if (group.Value.Length > 0)
                 {
-                    matchResult.StringParts.Add(new StringPart(group.Value, groupIndex%2 == 0));
+                    matchResult.StringParts.Add(new StringPart(group.Value, groupIndex % 2 == 0));
                 }
             }
 

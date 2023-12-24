@@ -18,13 +18,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Windows.Forms;
-using System.Runtime.InteropServices;
 
-namespace ManagedWinapi
-{
+namespace ManagedWinapi {
     /// <summary>
     /// Utility class that can be used to create key events with all current 
     /// locking keys (like Caps Lock) disabled. Other modifier keys (like Ctrl or Shift)
@@ -37,9 +33,8 @@ namespace ManagedWinapi
     /// }
     /// </code>
     /// </example>
-    public class LockKeyResetter :IDisposable
-    {
-        static readonly Keys[] MODIFIER_KEYS = { 
+    public class LockKeyResetter : IDisposable {
+        static readonly Keys[] MODIFIER_KEYS = {
             Keys.RShiftKey, Keys.LShiftKey, Keys.ShiftKey,
             Keys.RMenu, Keys.LMenu, Keys.Menu,
             Keys.RControlKey, Keys.LControlKey, Keys.LMenu,
@@ -93,7 +88,8 @@ namespace ManagedWinapi
         /// </summary>
         public void Dispose()
         {
-            if (capslock) {
+            if (capslock)
+            {
                 // press caps lock
                 KeyboardKey capslockKey = new KeyboardKey(Keys.CapsLock);
                 capslockKey.PressAndRelease();
@@ -101,7 +97,7 @@ namespace ManagedWinapi
                 if ((capslockKey.State & 0x01) != 0x01)
                     throw new Exception("Cannot enable caps lock.");
             }
-            for (int i = MODIFIER_KEYS.Length-1; i >= 0; i--)
+            for (int i = MODIFIER_KEYS.Length - 1; i >= 0; i--)
             {
                 if (simpleModifiers[i])
                 {

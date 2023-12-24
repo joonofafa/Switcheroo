@@ -17,19 +17,17 @@
  * http://www.gnu.org/licenses/lgpl.html or write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
+using ManagedWinapi.Accessibility;
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Runtime.InteropServices;
-using ManagedWinapi.Accessibility;
+using System.Text;
 
-namespace ManagedWinapi.Windows.Contents
-{
+namespace ManagedWinapi.Windows.Contents {
     /// <summary>
     /// The content of a list box or combo box.
     /// </summary>
-    public class ListContent : WindowContent
-    {
+    public class ListContent : WindowContent {
         string type, current;
         string[] values;
         int selected;
@@ -148,8 +146,7 @@ namespace ManagedWinapi.Windows.Contents
         }
     }
 
-    internal class ListBoxParser : WindowContentParser
-    {
+    internal class ListBoxParser : WindowContentParser {
         internal override bool CanParseContent(SystemWindow sw)
         {
             return SystemListBox.FromSystemWindow(sw) != null;
@@ -168,8 +165,7 @@ namespace ManagedWinapi.Windows.Contents
         }
     }
 
-    internal class ComboBoxParser : WindowContentParser
-    {
+    internal class ComboBoxParser : WindowContentParser {
         internal override bool CanParseContent(SystemWindow sw)
         {
             return SystemComboBox.FromSystemWindow(sw) != null;
@@ -188,8 +184,7 @@ namespace ManagedWinapi.Windows.Contents
         }
     }
 
-    internal class ListViewParser : WindowContentParser
-    {
+    internal class ListViewParser : WindowContentParser {
 
         internal override bool CanParseContent(SystemWindow sw)
         {
@@ -323,8 +318,7 @@ namespace ManagedWinapi.Windows.Contents
         }
     }
 
-    class TreeViewParser : WindowContentParser
-    {
+    class TreeViewParser : WindowContentParser {
         uint TVM_GETCOUNT = 0x1100 + 5;
 
         internal override bool CanParseContent(SystemWindow sw)
@@ -340,7 +334,8 @@ namespace ManagedWinapi.Windows.Contents
             {
                 List<string> treeNodes = new List<string>();
                 int selected = -1;
-                foreach(SystemAccessibleObject n in sao.Children) {
+                foreach (SystemAccessibleObject n in sao.Children)
+                {
                     if (n.RoleIndex == 36)
                     {
                         if ((n.State & 0x2) != 0)

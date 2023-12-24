@@ -18,15 +18,13 @@
  * along with Switcheroo.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+using System.Diagnostics;
 using System.Reflection;
 using System.Windows;
-using System.Diagnostics;
 using System.Windows.Documents;
 
-namespace Switcheroo
-{
-    public partial class AboutWindow : Window
-    {
+namespace Switcheroo {
+    public partial class AboutWindow : Window {
         public AboutWindow()
         {
             InitializeComponent();

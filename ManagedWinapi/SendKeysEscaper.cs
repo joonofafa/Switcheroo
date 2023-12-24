@@ -17,44 +17,40 @@
  * http://www.gnu.org/licenses/lgpl.html or write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
-using System;
-using System.Collections.Generic;
 using System.Text;
 
-namespace ManagedWinapi
-{
+namespace ManagedWinapi {
 
     /// <summary>
     /// Utility class to escape literal strings so that they can be used 
     /// for the <see cref="System.Windows.Forms.SendKeys"/> class.
     /// </summary>
-    public class SendKeysEscaper
-    {
+    public class SendKeysEscaper {
 
         /// <summary>
         /// Specifies if a character needs to be escaped.
         /// </summary>
-        private enum EscapableState { 
-            
+        private enum EscapableState {
+
             /// <summary>
             /// The character cannot be used at all with SendKeys.
             /// </summary>
-            NOT_AT_ALL, 
-            
+            NOT_AT_ALL,
+
             /// <summary>
             /// The character must be escaped by putting it into braces
             /// </summary>
-            BRACED_ONLY, 
-            
+            BRACED_ONLY,
+
             /// <summary>
             /// The character may not be escaped by putting it into braces
             /// </summary>
-            UNBRACED_ONLY, 
-            
+            UNBRACED_ONLY,
+
             /// <summary>
             /// Both ways are okay.
             /// </summary>
-            ALWAYS 
+            ALWAYS
         }
 
         private static SendKeysEscaper _instance;
@@ -74,7 +70,8 @@ namespace ManagedWinapi
 
         private EscapableState[] lookupTable = new EscapableState[256];
 
-        private SendKeysEscaper() {
+        private SendKeysEscaper()
+        {
             for (int i = 0; i < lookupTable.Length; i++)
             {
                 lookupTable[i] = EscapableState.ALWAYS;
@@ -92,17 +89,18 @@ namespace ManagedWinapi
             lookupTable[133] = EscapableState.UNBRACED_ONLY;
             lookupTable[160] = EscapableState.UNBRACED_ONLY;
             for (int i = 0; i < 9; i++)
-            {  
-               lookupTable[i] = EscapableState.NOT_AT_ALL; 
+            {
+                lookupTable[i] = EscapableState.NOT_AT_ALL;
             }
             for (int i = 14; i < 30; i++)
-			{
-               lookupTable[i] = EscapableState.NOT_AT_ALL; 
-			}
+            {
+                lookupTable[i] = EscapableState.NOT_AT_ALL;
+            }
             lookupTable[127] = EscapableState.NOT_AT_ALL;
         }
 
-        private EscapableState getEscapableState(char c) {
+        private EscapableState getEscapableState(char c)
+        {
             if (c < 256) return lookupTable[c]; else return EscapableState.ALWAYS;
         }
 

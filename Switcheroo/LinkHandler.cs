@@ -1,16 +1,25 @@
-﻿using System;
+﻿using IniParser.Model;
+using IniParser;
+using IWshRuntimeLibrary;
+using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Drawing;
-using System.Windows.Media.Imaging;
-using System.Diagnostics;
-using IWshRuntimeLibrary;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Runtime.InteropServices.ComTypes;
+using System.Text.RegularExpressions;
+using System.Windows.Media.Imaging;
 
 namespace Switcheroo {
+
+    public class ExternalData {
+        public string Name { get; set; }
+        public string Key { get; set; }
+        public string Uri { get; set; }
+    }
+
     class LinkHandler {
 
         [DllImport("shell32.dll", CharSet = CharSet.Auto)]
@@ -18,25 +27,106 @@ namespace Switcheroo {
         [DllImport("user32.dll", SetLastError = true)]
         extern static bool DestroyIcon(IntPtr hIcon);
 
-        private List<ListItemInfo> _listItemInfos = new List<ListItemInfo>();
+        private List<ListItemInfo> _listExecInfo = new List<ListItemInfo>();
+        private List<ListItemInfo> _listSearchInfo = new List<ListItemInfo>();
+        private static readonly string ICON_DEFAULT_PATH = "C:\\Windows\\System32\\shell32.dll";
+        private static readonly int ICON_DEFAULT_INDEX = 2;
+        private static readonly int ICON_WEB_INDEX = 13;
 
-        public void cacheLinks()
+        public void CacheExecutableLinksList()
         {
             string startMenuPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonStartMenu), "Programs");
+            List<string> lnkFiles;
+            ListItemInfo itemInfo;
+
             if (Directory.Exists(startMenuPath))
             {
-                List<string> lnkFiles = FindLnkFiles(startMenuPath);
+                lnkFiles = FindLnkFiles(startMenuPath);
                 foreach (var file in lnkFiles)
                 {
-                    ListItemInfo listItemInfo = new ListItemInfo
+                    itemInfo = GetLinkItemInfoFromShortcut(file);
+                    if (itemInfo != null)
                     {
-                        FormattedTitle = Path.GetFileNameWithoutExtension(file),
-                        FormattedSubTitle = Path.GetFileNameWithoutExtension(file),
-                        ImageSource = GetIconImageFromShortcut(file),
-                        TagData = file,
-                    };
-                    _listItemInfos.Add(listItemInfo);
+                        _listExecInfo.Add(itemInfo);
+                    }
                 }
+                
+                lnkFiles = FindUrlFiles(startMenuPath);
+                foreach (var file in lnkFiles)
+                {
+                    itemInfo = GetUrlFromShortcut(file);
+                    if (itemInfo != null)
+                    {
+                        _listExecInfo.Add(itemInfo);
+                    }
+                }
+            }
+
+            string programsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs");
+            if (Directory.Exists(programsPath))
+            {
+                lnkFiles = FindLnkFiles(programsPath);
+                foreach (var file in lnkFiles)
+                {
+                    itemInfo = GetLinkItemInfoFromShortcut(file);
+                    if (itemInfo != null)
+                    {
+                        _listExecInfo.Add(itemInfo);
+                    }
+                }
+                
+                lnkFiles = FindUrlFiles(programsPath);
+                foreach (var file in lnkFiles)
+                {
+                    itemInfo = GetUrlFromShortcut(file);
+                    if (itemInfo != null)
+                    {
+                        _listExecInfo.Add(itemInfo);
+                    }
+                }
+            }
+
+            MakeUWPAppList();
+            MakeSearchList();
+        }
+
+        private void MakeUWPAppList()
+        {
+            string jsonFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "uwp_list.json");
+
+            try
+            {
+                string json = System.IO.File.ReadAllText(jsonFilePath);
+                List<ExternalData> uwpApps = JsonConvert.DeserializeObject<List<ExternalData>>(json);
+
+                foreach (var app in uwpApps)
+                {
+                    _listExecInfo.Add(new ListItemInfo(app.Name, app.Key, GetIconImageFromExecutable(ICON_DEFAULT_PATH, ICON_DEFAULT_INDEX), app.Uri, false));
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception : {ex.Message}");
+            }
+        }
+
+        private void MakeSearchList()
+        {
+            string jsonFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "search_list.json");
+
+            try
+            {
+                string json = System.IO.File.ReadAllText(jsonFilePath);
+                List<ExternalData> searhSites = JsonConvert.DeserializeObject<List<ExternalData>>(json);
+
+                foreach (var app in searhSites)
+                {
+                    _listSearchInfo.Add(new ListItemInfo(app.Name, app.Key, GetIconImageFromExecutable(ICON_DEFAULT_PATH, ICON_WEB_INDEX), app.Uri, true));
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception : {ex.Message}");
             }
         }
 
@@ -49,16 +139,63 @@ namespace Switcheroo {
                      .ToList();
         }
 
-        private BitmapImage GetIconImageFromShortcut(string shortcutPath)
+        private List<string> FindUrlFiles(string directoryPath)
+        {
+            DirectoryInfo di = new DirectoryInfo(directoryPath);
+            return di.EnumerateFiles("*.url", SearchOption.AllDirectories)
+                     .Where(fi => !fi.Name.Contains("Uninstall"))
+                     .Select(fi => fi.FullName)
+                     .ToList();
+        }
+
+        private ListItemInfo GetUrlFromShortcut(string filePath)
+        {
+            var parser = new FileIniDataParser();
+            IniData data = parser.ReadFile(filePath);
+            ListItemInfo listItemInfo = new ListItemInfo();
+
+            try
+            {
+                string url = data["InternetShortcut"]["URL"].Trim();
+                string iconPath = data["InternetShortcut"]["IconFile"].Trim();
+
+                listItemInfo.FormattedTitle = Path.GetFileNameWithoutExtension(filePath);
+                listItemInfo.FormattedSubTitle = Path.GetFileNameWithoutExtension(filePath);
+                listItemInfo.TagData = url;
+                if (iconPath.Length > 0)
+                {
+                    listItemInfo.ImageSource = GetIconImageFromIconFile(iconPath);
+                }
+                else
+                {
+                    listItemInfo.ImageSource = GetIconImageFromExecutable(ICON_DEFAULT_PATH, ICON_DEFAULT_INDEX);
+                }
+                listItemInfo.IsUrl = true;
+            }
+            catch
+            {
+                listItemInfo = null;
+            }
+            return listItemInfo;
+        }
+
+        private ListItemInfo GetLinkItemInfoFromShortcut(string shortcutPath)
         {
             WshShell shell = new WshShell();
             IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(shortcutPath);
             string iconLocation = shortcut.IconLocation;
             string targetPath = shortcut.TargetPath;
+            ListItemInfo listItemInfo = new ListItemInfo();
+
+            listItemInfo.FormattedTitle = Path.GetFileNameWithoutExtension(shortcutPath);
+            listItemInfo.FormattedSubTitle = Path.GetFileNameWithoutExtension(targetPath);
+            listItemInfo.TagData = shortcutPath;
+            listItemInfo.ImageSource = null;
+            listItemInfo.IsUrl = false;
 
             if (string.IsNullOrEmpty(iconLocation))
             {
-                return null;
+                return listItemInfo;
             }
 
             string[] iconPathParts = iconLocation.Split(',');
@@ -67,50 +204,78 @@ namespace Switcheroo {
 
             try
             {
-                return GetIconImageFromExecutable(iconPath, iconIndex);
+                listItemInfo.ImageSource = GetIconImageFromExecutable(iconPath, iconIndex);
             }
-            catch (ArgumentException)
+            catch (Exception)
             {
-                return GetIconImageFromExecutable("C:\\Windows\\System32\\shell32.dll", 2);
+                listItemInfo.ImageSource = GetIconImageFromExecutable(ICON_DEFAULT_PATH, ICON_DEFAULT_INDEX);
             }
-            catch (FileNotFoundException)
-            {
-                return null;
-            }
+            return listItemInfo;
         }
 
-        public List<ListItemInfo> getAllUserLinks()
+        public List<ListItemInfo> GetAllExecuteableLinksList()
         {
-            return _listItemInfos;
+            return _listExecInfo;
         }
 
-        public string GetShortcutTarget(string lnkFilePath)
+        public List<ListItemInfo> GetAllSearchList()
         {
-            WshShell shell = new WshShell();
-            IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(lnkFilePath);
-            return shortcut.TargetPath;
+            return _listSearchInfo;
         }
+
         public BitmapImage GetIconImageFromExecutable(string exePath, int iconIndex)
         {
             ExtractIconEx(exePath, iconIndex, out IntPtr largeIcon, out _, 1);
 
             Icon icon = Icon.FromHandle(largeIcon);
-            BitmapImage bitmapImage;
-            using (Bitmap bitmap = icon.ToBitmap())
+            BitmapImage bitmapImage = null;
+
+            try
             {
-                using (MemoryStream memory = new MemoryStream())
+                using (Bitmap bitmap = icon.ToBitmap())
                 {
-                    bitmap.Save(memory, System.Drawing.Imaging.ImageFormat.Png);
-                    memory.Position = 0;
-                    bitmapImage = new BitmapImage();
-                    bitmapImage.BeginInit();
-                    bitmapImage.StreamSource = memory;
-                    bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
-                    bitmapImage.EndInit();
-                    bitmapImage.Freeze();
+                    using (MemoryStream memory = new MemoryStream())
+                    {
+                        bitmap.Save(memory, System.Drawing.Imaging.ImageFormat.Png);
+                        memory.Position = 0;
+                        bitmapImage = new BitmapImage();
+                        bitmapImage.BeginInit();
+                        bitmapImage.StreamSource = memory;
+                        bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+                        bitmapImage.EndInit();
+                        bitmapImage.Freeze();
+                    }
+                }
+                DestroyIcon(largeIcon);
+            }
+            catch (Exception) { }
+            return bitmapImage;
+        }
+
+        public BitmapImage GetIconImageFromIconFile(string iconPath)
+        {
+            BitmapImage bitmapImage = null;
+
+            try
+            {
+                using (Icon ico = new Icon(iconPath))
+                {
+                    using (Bitmap bmp = ico.ToBitmap())
+                    {
+                        var memoryStream = new MemoryStream();
+                        bmp.Save(memoryStream, System.Drawing.Imaging.ImageFormat.Png);
+                        memoryStream.Position = 0;
+
+                        bitmapImage = new BitmapImage();
+                        bitmapImage.BeginInit();
+                        bitmapImage.StreamSource = memoryStream;
+                        bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+                        bitmapImage.EndInit();
+                        bitmapImage.Freeze();
+                    }
                 }
             }
-            DestroyIcon(largeIcon);
+            catch (Exception) { }
             return bitmapImage;
         }
     }

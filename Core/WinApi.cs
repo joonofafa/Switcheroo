@@ -23,10 +23,8 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows.Forms;
 
-namespace Switcheroo.Core
-{
-    internal static class WinApi
-    {
+namespace Switcheroo.Core {
+    internal static class WinApi {
         public delegate bool EnumWindowsProc(IntPtr hWnd, int lParam);
 
         public static IntPtr Statusbar = FindWindow("Shell_TrayWnd", "");
@@ -47,8 +45,7 @@ namespace Switcheroo.Core
         [DllImport("user32.dll", SetLastError = true)]
         public static extern void SwitchToThisWindow(IntPtr hWnd, bool fAltTab);
 
-        public enum GetAncestorFlags
-        {
+        public enum GetAncestorFlags {
             /// <summary>
             /// Retrieves the parent window. This does not include the owner, as it does with the GetParent function.
             /// </summary>
@@ -72,8 +69,7 @@ namespace Switcheroo.Core
         public static extern IntPtr GetLastActivePopup(IntPtr hWnd);
 
         [Flags]
-        public enum ProcessAccess
-        {
+        public enum ProcessAccess {
             /// <summary>
             /// Required to create a thread.
             /// </summary>
@@ -172,8 +168,7 @@ namespace Switcheroo.Core
         [DllImport("user32.dll", SetLastError = true)]
         public static extern IntPtr GetWindow(IntPtr hWnd, GetWindowCmd uCmd);
 
-        public enum GetWindowCmd : uint
-        {
+        public enum GetWindowCmd : uint {
             GW_HWNDFIRST = 0,
             GW_HWNDLAST = 1,
             GW_HWNDNEXT = 2,
@@ -213,8 +208,7 @@ namespace Switcheroo.Core
         /// <summary>
         /// The set of valid MapTypes used in MapVirtualKey
         /// </summary>
-        public enum MapVirtualKeyMapTypes : uint
-        {
+        public enum MapVirtualKeyMapTypes : uint {
             /// <summary>
             /// uCode is a virtual-key code and is translated into a scan code.
             /// If it is a virtual-key code that does not distinguish between left- and
@@ -257,8 +251,7 @@ namespace Switcheroo.Core
         [DllImport("user32.dll")]
         public static extern IntPtr DefWindowProc(IntPtr hWnd, int message, int wParam, IntPtr lParam);
 
-        public enum ClassLongFlags
-        {
+        public enum ClassLongFlags {
             GCLP_MENUNAME = -8,
             GCLP_HBRBACKGROUND = -10,
             GCLP_HCURSOR = -12,
@@ -297,8 +290,7 @@ namespace Switcheroo.Core
             out IntPtr lpdwResult);
 
         [Flags]
-        public enum SendMessageTimeoutFlags : uint
-        {
+        public enum SendMessageTimeoutFlags : uint {
             SMTO_NORMAL = 0x0,
             SMTO_BLOCK = 0x1,
             SMTO_ABORTIFHUNG = 0x2,

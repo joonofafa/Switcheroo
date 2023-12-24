@@ -1,16 +1,12 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Runtime.InteropServices;
 
-namespace ManagedWinapi
-{
+namespace ManagedWinapi {
     /// <summary>
     /// Collection of miscellaneous actions that cannot be performed as 
     /// a non-administrative user, like shutdown or setting the system time.
     /// </summary>
-    public static class PrivilegedActions
-    {
+    public static class PrivilegedActions {
         /// <summary>
         /// Shutdown the system.
         /// </summary>
@@ -70,8 +66,7 @@ namespace ManagedWinapi
         /// <summary>
         /// Actions that can be performed at shutdown.
         /// </summary>
-        public enum ShutdownAction : uint
-        {
+        public enum ShutdownAction : uint {
             /// <summary>
             /// Log off the currently logged-on user.
             /// </summary>
@@ -103,8 +98,7 @@ namespace ManagedWinapi
         /// Whether shutdown should be forced if an application cancels it
         /// or is hung.
         /// </summary>
-        public enum ShutdownForceMode : uint
-        {
+        public enum ShutdownForceMode : uint {
             /// <summary>
             /// Do not force shutdown, applications can cancel it.
             /// </summary>
@@ -128,8 +122,7 @@ namespace ManagedWinapi
 
         const uint SHTDN_REASON_FLAG_PLANNED = 0x80000000;
 
-        struct SYSTEMTIME
-        {
+        struct SYSTEMTIME {
             internal ushort wYear, wMonth, wDayOfWeek, wDay,
                wHour, wMinute, wSecond, wMilliseconds;
 

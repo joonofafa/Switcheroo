@@ -18,18 +18,16 @@
  * along with Switcheroo.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+using Microsoft.Win32;
+using Switcheroo.Core;
 using System;
 using System.Globalization;
 using System.Runtime.Caching;
 using System.Windows.Data;
 using System.Windows.Media.Imaging;
-using Microsoft.Win32;
-using Switcheroo.Core;
 
-namespace Switcheroo
-{
-    public class WindowHandleToIconConverter : IValueConverter
-    {
+namespace Switcheroo {
+    public class WindowHandleToIconConverter : IValueConverter {
         private readonly IconToBitmapImageConverter _iconToBitmapConverter;
 
         public WindowHandleToIconConverter()
@@ -39,7 +37,7 @@ namespace Switcheroo
 
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            var handle = (IntPtr) value;
+            var handle = (IntPtr)value;
             var key = "IconImage-" + handle;
             var shortCacheKey = key + "-shortCache";
             var longCacheKey = key + "-longCache";

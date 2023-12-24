@@ -23,10 +23,8 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Windows.Media.Imaging;
 
-namespace Switcheroo
-{
-    public class IconToBitmapImageConverter
-    {
+namespace Switcheroo {
+    public class IconToBitmapImageConverter {
         public BitmapImage Convert(Icon icon)
         {
             if (icon == null)

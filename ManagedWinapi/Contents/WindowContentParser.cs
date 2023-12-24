@@ -17,12 +17,9 @@
  * http://www.gnu.org/licenses/lgpl.html or write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
-using System;
 
-namespace ManagedWinapi.Windows.Contents
-{
-    internal abstract class WindowContentParser
-    {
+namespace ManagedWinapi.Windows.Contents {
+    internal abstract class WindowContentParser {
         internal abstract bool CanParseContent(SystemWindow sw);
         internal abstract WindowContent ParseContent(SystemWindow sw);
 

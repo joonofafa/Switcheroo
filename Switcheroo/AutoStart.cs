@@ -23,13 +23,11 @@ using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
 
-namespace Switcheroo
-{
+namespace Switcheroo {
     // Create a shortcut file in the current users start up folder
     // Based on this answer on Stackoverflow:
     // http://stackoverflow.com/a/19914018/198065
-    public class AutoStart
-    {
+    public class AutoStart {
         public bool IsEnabled
         {
             get { return HasShortcut(); }
@@ -118,8 +116,7 @@ namespace Switcheroo
         }
     }
 
-    public class AutoStartException : Exception
-    {
+    public class AutoStartException : Exception {
         public AutoStartException(string message)
             : base(message)
         {

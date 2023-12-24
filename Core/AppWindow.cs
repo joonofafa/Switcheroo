@@ -18,6 +18,7 @@
  * along with Switcheroo.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+using ManagedWinapi.Windows;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -26,15 +27,12 @@ using System.Linq;
 using System.Runtime.Caching;
 using System.Runtime.InteropServices;
 using System.Text;
-using ManagedWinapi.Windows;
 
-namespace Switcheroo.Core
-{
+namespace Switcheroo.Core {
     /// <summary>
     /// This class is a wrapper around the Win32 api window handles
     /// </summary>
-    public class AppWindow : SystemWindow
-    {
+    public class AppWindow : SystemWindow {
         public string ProcessTitle
         {
             get
@@ -213,7 +211,7 @@ namespace Switcheroo.Core
             //    2 = Program is running on a different virtual desktop
 
             var hasAppropriateApplicationViewCloakType = false;
-            WinApi.EnumPropsEx(HWnd, (hwnd, lpszString, data, dwData) =>  
+            WinApi.EnumPropsEx(HWnd, (hwnd, lpszString, data, dwData) =>
             {
                 var propName = Marshal.PtrToStringAnsi(lpszString);
                 if (propName == "ApplicationViewCloakType")

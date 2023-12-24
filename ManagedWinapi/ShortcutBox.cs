@@ -1,21 +1,13 @@
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Text;
 using System.Windows.Forms;
-using System.Runtime.InteropServices;
 
-namespace ManagedWinapi
-{
+namespace ManagedWinapi {
     /// <summary>
     /// A <see cref="TextBox" /> that can be used to select a keyboard shortcut.
     /// A context menu allows selecting keys that are not available directly
     /// by typing them.
     /// </summary>
-    public partial class ShortcutBox : TextBox
-    {
+    public partial class ShortcutBox : TextBox {
         private Keys key;
         private bool shift;
         private bool alt;

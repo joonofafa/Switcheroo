@@ -17,25 +17,23 @@
  * http://www.gnu.org/licenses/lgpl.html or write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
-using System;
-using System.Collections.Generic;
-using System.Text;
 using Accessibility;
 using ManagedWinapi.Windows;
-using System.Runtime.InteropServices;
+using System;
+using System.Collections.Generic;
 using System.Drawing;
+using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
+using System.Text;
 
-namespace ManagedWinapi.Accessibility
-{
+namespace ManagedWinapi.Accessibility {
     /// <summary>
     /// Provides access to the Active Accessibility API. Every <see cref="SystemWindow"/>
     /// has one ore more AccessibleObjects attached that provide information about the
     /// window to visually impaired people. This information is mainly used by screen 
     /// readers and other accessibility software..
     /// </summary>
-    public class SystemAccessibleObject
-    {
+    public class SystemAccessibleObject {
         private IAccessible iacc;
         private int childID;
 
@@ -503,7 +501,7 @@ namespace ManagedWinapi.Accessibility
             if (sa1.Visible != sa2.Visible) return false;
             if (ia1.accParent == null && ia2.accParent == null) return true;
             if (ia1.accParent == null || ia2.accParent == null) return false;
-            bool de =  DeepEquals((IAccessible)ia1.accParent, (IAccessible)ia2.accParent);
+            bool de = DeepEquals((IAccessible)ia1.accParent, (IAccessible)ia2.accParent);
             return de;
         }
 
@@ -582,8 +580,7 @@ namespace ManagedWinapi.Accessibility
     /// This enumeration lists all kinds of accessible objects that can
     /// be directly assigned to a window.
     /// </summary>
-    public enum AccessibleObjectID : uint
-    {
+    public enum AccessibleObjectID : uint {
         /// <summary>
         /// The window itself.
         /// </summary>

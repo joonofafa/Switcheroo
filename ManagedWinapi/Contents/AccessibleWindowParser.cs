@@ -17,20 +17,17 @@
  * http://www.gnu.org/licenses/lgpl.html or write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Runtime.InteropServices;
 using ManagedWinapi.Accessibility;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using System.Text;
 
-namespace ManagedWinapi.Windows.Contents
-{
+namespace ManagedWinapi.Windows.Contents {
     /// <summary>
     /// The content of an object that supports the Accessibility API 
     /// (used by screen readers and similar programs).
     /// </summary>
-    public class AccessibleWindowContent : WindowContent
-    {
+    public class AccessibleWindowContent : WindowContent {
 
         bool parsed = false;
         readonly string name;
@@ -152,8 +149,7 @@ namespace ManagedWinapi.Windows.Contents
 
     }
 
-    class AccessibleWindowParser : WindowContentParser
-    {
+    class AccessibleWindowParser : WindowContentParser {
         internal override bool CanParseContent(SystemWindow sw)
         {
             return TestMenu(sw, AccessibleObjectID.OBJID_MENU) ||

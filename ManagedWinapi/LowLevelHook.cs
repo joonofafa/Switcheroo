@@ -1,16 +1,14 @@
-using System;
 using ManagedWinapi.Windows;
+using System;
 using System.Runtime.InteropServices;
-using System.Windows.Forms;
 using System.Text;
+using System.Windows.Forms;
 
-namespace ManagedWinapi.Hooks
-{
+namespace ManagedWinapi.Hooks {
     /// <summary>
     /// A hook that intercepts keyboard events.
     /// </summary>
-    public class LowLevelKeyboardHook : Hook
-    {
+    public class LowLevelKeyboardHook : Hook {
         char currentDeadChar = '\0';
 
         /// <summary>
@@ -141,8 +139,7 @@ namespace ManagedWinapi.Hooks
         #region PInvoke Declarations
 
         [StructLayout(LayoutKind.Sequential)]
-        private class KBDLLHOOKSTRUCT
-        {
+        private class KBDLLHOOKSTRUCT {
             public int vkCode;
             public int scanCode;
             public int flags;
@@ -164,8 +161,7 @@ namespace ManagedWinapi.Hooks
     /// <summary>
     /// A hook that intercepts mouse events
     /// </summary>
-    public class LowLevelMouseHook : Hook
-    {
+    public class LowLevelMouseHook : Hook {
 
         /// <summary>
         /// Called when a mouse action has been intercepted.
@@ -227,8 +223,7 @@ namespace ManagedWinapi.Hooks
         #region PInvoke Declarations
 
         [StructLayout(LayoutKind.Sequential)]
-        private class MSLLHOOKSTRUCT
-        {
+        private class MSLLHOOKSTRUCT {
             public POINT pt;
             public int mouseData;
             public int flags;
@@ -247,8 +242,7 @@ namespace ManagedWinapi.Hooks
     /// <summary>
     /// A message that has been intercepted by a low-level hook
     /// </summary>
-    public abstract class LowLevelMessage
-    {
+    public abstract class LowLevelMessage {
         private int time;
         private int flags;
         private int msg;
@@ -304,8 +298,7 @@ namespace ManagedWinapi.Hooks
     /// <summary>
     /// A message that has been intercepted by a low-level mouse hook
     /// </summary>
-    public class LowLevelMouseMessage : LowLevelMessage
-    {
+    public class LowLevelMouseMessage : LowLevelMessage {
         private POINT pt;
         private int mouseData;
 
@@ -384,8 +377,7 @@ namespace ManagedWinapi.Hooks
 
         #region PInvoke Declarations
         [Flags]
-        private enum MouseEventFlagValues
-        {
+        private enum MouseEventFlagValues {
             LEFTDOWN = 0x00000002,
             LEFTUP = 0x00000004,
             MIDDLEDOWN = 0x00000020,
@@ -415,8 +407,7 @@ namespace ManagedWinapi.Hooks
     /// <summary>
     /// A message that has been intercepted by a low-level mouse hook
     /// </summary>
-    public class LowLevelKeyboardMessage : LowLevelMessage
-    {
+    public class LowLevelKeyboardMessage : LowLevelMessage {
         private int vkCode;
         private int scanCode;
 

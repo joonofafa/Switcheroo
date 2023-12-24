@@ -18,20 +18,16 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 using System;
-using System.Collections.Generic;
-using System.Text;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using System.ComponentModel;
 
-namespace ManagedWinapi
-{
+namespace ManagedWinapi {
     /// <summary>
     /// A chunk in another processes memory. Mostly used to allocate buffers
     /// in another process for sending messages to its windows.
     /// </summary>
-    public class ProcessMemoryChunk : IDisposable
-    {
+    public class ProcessMemoryChunk : IDisposable {
         readonly Process process;
         readonly IntPtr location, hProcess;
         readonly int size;
@@ -241,8 +237,7 @@ namespace ManagedWinapi
         #endregion
     }
 
-    internal enum ProcessAccessFlags : int
-    {
+    internal enum ProcessAccessFlags : int {
         All = 0x001F0FFF,
         Terminate = 0x00000001,
         CreateThread = 0x00000002,

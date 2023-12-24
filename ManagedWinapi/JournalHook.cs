@@ -18,19 +18,14 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 using System;
-using System.Collections.Generic;
-using System.Text;
-using System.ComponentModel;
 using System.Runtime.InteropServices;
 
-namespace ManagedWinapi.Hooks
-{
+namespace ManagedWinapi.Hooks {
     /// <summary>
     /// Abstract base class for hooks that can be used to create or playback 
     /// a log of keyboard and mouse events.
     /// </summary>
-    public abstract class JournalHook : Hook
-    {
+    public abstract class JournalHook : Hook {
         /// <summary>
         /// Occurs when the journal activity has been cancelled by
         /// CTRL+ALT+DEL or CTRL+ESC.
@@ -86,8 +81,7 @@ namespace ManagedWinapi.Hooks
         private static readonly int WM_CANCELJOURNAL = 0x4B;
 
         [StructLayout(LayoutKind.Sequential)]
-        internal struct EVENTMSG
-        {
+        internal struct EVENTMSG {
             public uint message;
             public uint paramL;
             public uint paramH;
@@ -100,8 +94,7 @@ namespace ManagedWinapi.Hooks
     /// <summary>
     /// An event that has been recorded by a journal hook.
     /// </summary>
-    public class JournalMessage
-    {
+    public class JournalMessage {
         internal static JournalMessage Create(JournalHook.EVENTMSG msg)
         {
             return new JournalMessage(msg);
@@ -168,8 +161,7 @@ namespace ManagedWinapi.Hooks
     /// <summary>
     /// Event data for a journal record event.
     /// </summary>
-    public class JournalRecordEventArgs : EventArgs
-    {
+    public class JournalRecordEventArgs : EventArgs {
         private JournalMessage msg;
 
         internal JournalRecordEventArgs(JournalMessage msg)
@@ -189,8 +181,7 @@ namespace ManagedWinapi.Hooks
     /// <summary>
     /// A hook that can be used to create a log of keyboard and mouse events.
     /// </summary>
-    public class JournalRecordHook : JournalHook
-    {
+    public class JournalRecordHook : JournalHook {
         /// <summary>
         /// Occurs when a system modal dialog appears. This may be used
         /// to stop recording.
@@ -249,8 +240,7 @@ namespace ManagedWinapi.Hooks
     /// <summary>
     /// A hook that can be used to playback a log of keyboard and mouse events.
     /// </summary>
-    public class JournalPlaybackHook : JournalHook
-    {
+    public class JournalPlaybackHook : JournalHook {
         /// <summary>
         /// Occurs when a system modal dialog appears. This may be used to 
         /// stop playback.
@@ -352,8 +342,7 @@ namespace ManagedWinapi.Hooks
     /// Convenience class that uses a journal playback hook to block keyboard
     /// and mouse input for some time.
     /// </summary>
-    public class InputLocker : IDisposable
-    {
+    public class InputLocker : IDisposable {
 
         private int interval, count;
         private JournalPlaybackHook hook;

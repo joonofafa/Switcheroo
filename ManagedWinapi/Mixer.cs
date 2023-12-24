@@ -17,21 +17,19 @@
  * http://www.gnu.org/licenses/lgpl.html or write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
+using ManagedWinapi.Windows;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
-using ManagedWinapi.Windows;
 
-namespace ManagedWinapi.Audio.Mixer
-{
+namespace ManagedWinapi.Audio.Mixer {
     /// <summary>
     /// Represents a mixer provided by a sound card. Each mixer has
     /// multiple destination lines (e. g. Record and Playback) of which
     /// each has multiple source lines (Wave, MIDI, Mic, etc.).
     /// </summary>
-    public class Mixer : IDisposable
-    {
+    public class Mixer : IDisposable {
         /// <summary>
         /// Gets the number of available mixers in this system.
         /// </summary>
@@ -240,8 +238,7 @@ namespace ManagedWinapi.Audio.Mixer
         private static extern int mixerGetDevCapsA(IntPtr uMxId, ref MIXERCAPS
         pmxcaps, int cbmxcaps);
 
-        private struct MIXERCAPS
-        {
+        private struct MIXERCAPS {
             public short wMid;
             public short wPid;
             public int vDriverVersion;
@@ -269,8 +266,7 @@ namespace ManagedWinapi.Audio.Mixer
     /// Provides data for the LineChanged and ControlChanged events of a 
     /// <see cref="Mixer">Mixer</see>.
     /// </summary>
-    public class MixerEventArgs : EventArgs
-    {
+    public class MixerEventArgs : EventArgs {
         private Mixer mixer;
         private MixerLine line;
         private MixerControl control;

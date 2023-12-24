@@ -1,18 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Switcheroo.Core;
+using System;
 using System.ComponentModel;
-using System.Diagnostics;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
 using System.Windows.Media.Imaging;
-using Switcheroo.Core;
 
-namespace Switcheroo
-{
+namespace Switcheroo {
     public static class IconHelper {
         // 창 핸들로부터 아이콘을 가져오기 위한 상수와 메소드 선언
         private const uint SHGFI_ICON = 0x100;
@@ -87,8 +80,7 @@ namespace Switcheroo
         }
     }
 
-    public class AppWindowViewModel : ListItemInfo, INotifyPropertyChanged, IWindowText
-    {
+    public class AppWindowViewModel : ListItemInfo, INotifyPropertyChanged, IWindowText {
         public AppWindowViewModel(AppWindow appWindow)
         {
             AppWindow = appWindow;
@@ -183,7 +175,7 @@ namespace Switcheroo
 
         private string GetPropertyName<T>(Expression<Func<T>> property)
         {
-            var lambda = (LambdaExpression) property;
+            var lambda = (LambdaExpression)property;
 
             MemberExpression memberExpression;
             if (lambda.Body is UnaryExpression unaryExpression)
@@ -200,14 +192,15 @@ namespace Switcheroo
         #endregion
     }
 
-    public class ListItemInfo 
-    {
+    public class ListItemInfo {
         public ListItemInfo() { }
-        public ListItemInfo(string title, string subTitle, BitmapImage imageSource)
+        public ListItemInfo(string title, string subTitle, BitmapImage imageSource, string tagData, bool isUrl)
         {
             FormattedTitle = title;
             FormattedSubTitle = subTitle;
             ImageSource = imageSource;
+            TagData = tagData;
+            IsUrl = isUrl;
         }
 
         private string _formattedTitle;
@@ -229,7 +222,7 @@ namespace Switcheroo
         private BitmapImage _bitmapImage = null;
         public BitmapImage ImageSource
         {
-            get { return _bitmapImage;}
+            get { return _bitmapImage; }
             set { _bitmapImage = value; }
         }
 
@@ -239,6 +232,13 @@ namespace Switcheroo
         {
             get { return _tagData; }
             set { _tagData = value; }
+        }
+
+        private bool _isUrl;
+        public bool IsUrl
+        {
+            get { return _isUrl; }
+            set { _isUrl = value; } 
         }
     }
 }

@@ -18,21 +18,19 @@
  * along with Switcheroo.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+using ManagedWinapi;
+using Switcheroo.Core;
+using Switcheroo.Properties;
 using System.Text;
 using System.Windows;
 using System.Windows.Forms;
 using System.Windows.Input;
-using ManagedWinapi;
-using Switcheroo.Core;
-using Switcheroo.Properties;
 using Application = System.Windows.Application;
 using KeyEventArgs = System.Windows.Input.KeyEventArgs;
 using MessageBox = System.Windows.MessageBox;
 
-namespace Switcheroo
-{
-    public partial class OptionsWindow : Window
-    {
+namespace Switcheroo {
+    public partial class OptionsWindow : Window {
         private readonly HotKey _hotkey;
         private readonly HotKeyForExecuter _lnkHotkey;
         private HotkeyViewModel _hotkeyViewModel;
@@ -104,12 +102,12 @@ namespace Switcheroo
                     _hotkey.Shift = _hotkeyViewModel.Shift;
                     _hotkey.Ctrl = _hotkeyViewModel.Ctrl;
                     _hotkey.WindowsKey = _hotkeyViewModel.Windows;
-                    _hotkey.KeyCode = (Keys) KeyInterop.VirtualKeyFromKey(_hotkeyViewModel.KeyCode);
+                    _hotkey.KeyCode = (Keys)KeyInterop.VirtualKeyFromKey(_hotkeyViewModel.KeyCode);
                     _hotkey.Enabled = true;
                 }
 
-                if (Settings.Default.EnableLnkHotkey) 
-                { 
+                if (Settings.Default.EnableLnkHotkey)
+                {
                     _lnkHotkey.Alt = _lnkHotkeyViewModel.Alt;
                     _lnkHotkey.Shift = _lnkHotkeyViewModel.Shift;
                     _lnkHotkey.Ctrl = _lnkHotkeyViewModel.Ctrl;
@@ -142,8 +140,7 @@ namespace Switcheroo
             }
         }
 
-        private class HotkeyViewModel
-        {
+        private class HotkeyViewModel {
             public Key KeyCode { get; set; }
             public bool Shift { get; set; }
             public bool Alt { get; set; }
@@ -175,7 +172,7 @@ namespace Switcheroo
                 }
 
                 var keyString =
-                    KeyboardHelper.CodeToString((uint) KeyInterop.VirtualKeyFromKey(KeyCode)).ToUpper().Trim();
+                    KeyboardHelper.CodeToString((uint)KeyInterop.VirtualKeyFromKey(KeyCode)).ToUpper().Trim();
                 if (keyString.Length == 0)
                 {
                     keyString = new KeysConverter().ConvertToString(KeyCode);

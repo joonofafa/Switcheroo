@@ -1,7 +1,5 @@
-﻿namespace Switcheroo.Core.Matchers
-{
-    public class StartsWithMatcher : IMatcher
-    {
+﻿namespace Switcheroo.Core.Matchers {
+    public class StartsWithMatcher : IMatcher {
         public MatchResult Evaluate(string input, string pattern)
         {
             var matchResult = new MatchResult();

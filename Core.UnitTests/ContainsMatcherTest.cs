@@ -1,11 +1,9 @@
 ﻿using NUnit.Framework;
 using Switcheroo.Core.Matchers;
 
-namespace Switcheroo.Core.UnitTests
-{
+namespace Switcheroo.Core.UnitTests {
     [TestFixture]
-    public class ContainsMatcherTests
-    {
+    public class ContainsMatcherTests {
         [Test]
         public void Evaluate_InputNull_ReturnsNonMatchingResult()
         {

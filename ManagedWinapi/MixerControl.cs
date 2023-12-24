@@ -20,16 +20,13 @@
 using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
-using ManagedWinapi.Windows;
 
-namespace ManagedWinapi.Audio.Mixer
-{
+namespace ManagedWinapi.Audio.Mixer {
     /// <summary>
     /// A control of a mixer line. This can be for example a volume slider
     /// or a mute switch.
     /// </summary>
-    public class MixerControl
-    {
+    public class MixerControl {
         /// <summary>
         /// Occurs when the value of this control is changed
         /// </summary>
@@ -215,11 +212,10 @@ namespace ManagedWinapi.Audio.Mixer
         #region PInvoke Declarations
 
         [DllImport("winmm.dll", CharSet = CharSet.Ansi)]
-        private static extern int mixerGetLineControlsA(IntPtr hmxobj, ref 
+        private static extern int mixerGetLineControlsA(IntPtr hmxobj, ref
             MIXERLINECONTROLS pmxlc, int fdwControls);
 
-        private struct MIXERLINECONTROLS
-        {
+        private struct MIXERLINECONTROLS {
             public int cbStruct;
             public int dwLineID;
 
@@ -230,8 +226,7 @@ namespace ManagedWinapi.Audio.Mixer
         }
 
 #pragma warning disable 649
-        internal struct MIXERCONTROL
-        {
+        internal struct MIXERCONTROL {
             public int cbStruct;
             public int dwControlID;
             public uint dwControlType;
@@ -250,8 +245,7 @@ namespace ManagedWinapi.Audio.Mixer
         }
 #pragma warning restore 649
 
-        internal struct MIXERCONTROLDETAILS
-        {
+        internal struct MIXERCONTROLDETAILS {
             public int cbStruct;
             public int dwControlID;
             public int cChannels;
@@ -260,13 +254,11 @@ namespace ManagedWinapi.Audio.Mixer
             public IntPtr paDetails;
         }
 
-        internal struct MIXERCONTROLDETAILS_UNSIGNED
-        {
+        internal struct MIXERCONTROLDETAILS_UNSIGNED {
             public int dwValue;
         }
 
-        internal struct MIXERCONTROLDETAILS_BOOLEAN
-        {
+        internal struct MIXERCONTROLDETAILS_BOOLEAN {
             public int fValue;
         }
 
@@ -277,11 +269,11 @@ namespace ManagedWinapi.Audio.Mixer
         private static readonly uint MIXERCONTROL_CT_UNITS_MASK = 0x00FF0000;
 
         [DllImport("winmm.dll", CharSet = CharSet.Ansi)]
-        internal static extern int mixerGetControlDetailsA(IntPtr hmxobj, ref 
+        internal static extern int mixerGetControlDetailsA(IntPtr hmxobj, ref
             MIXERCONTROLDETAILS pmxcd, int fdwDetails);
 
         [DllImport("winmm.dll", CharSet = CharSet.Ansi)]
-        internal static extern int mixerSetControlDetails(IntPtr hmxobj, ref 
+        internal static extern int mixerSetControlDetails(IntPtr hmxobj, ref
             MIXERCONTROLDETAILS pmxcd, int fdwDetails);
 
         #endregion
@@ -292,8 +284,7 @@ namespace ManagedWinapi.Audio.Mixer
     /// A mixer control that is adjusted by a vertical fader, with a linear scale 
     /// of positive values (ie, 0 is the lowest possible value).
     /// </summary>
-    public class FaderMixerControl : MixerControl
-    {
+    public class FaderMixerControl : MixerControl {
         internal FaderMixerControl(Mixer mx, MixerLine ml, MixerControl.MIXERCONTROL mc) : base(mx, ml, mc) { }
 
         /// <summary>
@@ -366,8 +357,7 @@ namespace ManagedWinapi.Audio.Mixer
     /// A control that is has only two states (ie, values), 
     /// and is therefore adjusted via a button.
     /// </summary>
-    public class BooleanMixerControl : MixerControl
-    {
+    public class BooleanMixerControl : MixerControl {
         internal BooleanMixerControl(Mixer mx, MixerLine ml, MixerControl.MIXERCONTROL mc) : base(mx, ml, mc) { }
 
         /// <summary>
@@ -432,8 +422,7 @@ namespace ManagedWinapi.Audio.Mixer
     /// The descriptions for these classes have been taken from 
     /// http://www.borg.com/~jglatt/tech/mixer.htm.
     /// </summary>
-    public enum MixerControlClass
-    {
+    public enum MixerControlClass {
         /// <summary>
         /// 	A custom class of control. If none of the others are applicable.
         /// </summary>
@@ -487,8 +476,7 @@ namespace ManagedWinapi.Audio.Mixer
     /// Flags of a mixer control.
     /// </summary>
     [Flags]
-    public enum MixerControlFlags
-    {
+    public enum MixerControlFlags {
         /// <summary>
         /// This control has multiple channels, but only one value for
         /// all of them.
@@ -511,8 +499,7 @@ namespace ManagedWinapi.Audio.Mixer
     /// You can find descriptions for most of these types on 
     /// http://www.borg.com/~jglatt/tech/mixer.htm.
     /// </summary>
-    public enum MixerControlType
-    {
+    public enum MixerControlType {
         ///
         MIXERCONTROL_CT_SC_SWITCH_BOOLEAN = 0x00000000,
         ///

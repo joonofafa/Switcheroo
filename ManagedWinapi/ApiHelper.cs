@@ -18,19 +18,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 
-namespace ManagedWinapi
-{
+namespace ManagedWinapi {
     /// <summary>
     /// Helper class that contains static methods useful for API programming. This
     /// class is not exposed to the user.
     /// </summary>
-    internal class ApiHelper
-    {
+    internal class ApiHelper {
         /// <summary>
         /// Throw a <see cref="Win32Exception"/> if the supplied (return) value is zero.
         /// This exception uses the last Win32 error code as error message.

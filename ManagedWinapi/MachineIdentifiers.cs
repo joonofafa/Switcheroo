@@ -19,29 +19,26 @@
  */
 using System;
 using System.Collections.Generic;
-using System.Management;
-using System.Security.Principal;
-using System.Runtime.InteropServices;
-using System.Net.NetworkInformation;
 using System.IO;
+using System.Management;
 using System.Net;
+using System.Net.NetworkInformation;
+using System.Runtime.InteropServices;
+using System.Security.Principal;
 
-namespace ManagedWinapi
-{
+namespace ManagedWinapi {
     /// <summary>
     /// Contains utility functions to determine values that are (almost)
     /// unique on each computer. These values can be useful for locking
     /// software to a machine.
     /// </summary>
-    public static class MachineIdentifiers
-    {
+    public static class MachineIdentifiers {
 
         const uint POLICY_VIEW_LOCAL_INFORMATION = 0x00000001,
                 PolicyAccountDomainInformation = 5;
 
         [StructLayout(LayoutKind.Explicit)]
-        private struct POLICY_ACCOUNT_DOMAIN_INFO
-        {
+        private struct POLICY_ACCOUNT_DOMAIN_INFO {
             [FieldOffset(8)]
             public IntPtr DomainSid;
         }

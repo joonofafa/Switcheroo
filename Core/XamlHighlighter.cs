@@ -18,15 +18,13 @@
  * along with Switcheroo.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+using Switcheroo.Core.Matchers;
 using System.Collections.Generic;
 using System.Linq;
 using System.Xml.Linq;
-using Switcheroo.Core.Matchers;
 
-namespace Switcheroo.Core
-{
-    public class XamlHighlighter
-    {
+namespace Switcheroo.Core {
+    public class XamlHighlighter {
         public string Highlight(IEnumerable<StringPart> stringParts)
         {
             if (stringParts == null) return string.Empty;

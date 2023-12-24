@@ -17,19 +17,17 @@
  * http://www.gnu.org/licenses/lgpl.html or write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
+using Accessibility;
 using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
-using Accessibility;
 
-namespace ManagedWinapi.Accessibility
-{
+namespace ManagedWinapi.Accessibility {
     /// <summary>
     /// Listens to events from the Windows accessibility system. These events are useful
     /// if you want to write a screenreader or similar program.
     /// </summary>
-    public class AccessibleEventListener : Component
-    {
+    public class AccessibleEventListener : Component {
         /// <summary>
         /// Occurs when an accessible event is received.
         /// </summary>
@@ -190,8 +188,7 @@ namespace ManagedWinapi.Accessibility
     /// <summary>
     /// Provides data for accessible events.
     /// </summary>
-    public class AccessibleEventArgs : EventArgs
-    {
+    public class AccessibleEventArgs : EventArgs {
         private AccessibleEventType eventType;
         private IntPtr hWnd;
         private uint idObject;
@@ -276,8 +273,7 @@ namespace ManagedWinapi.Accessibility
     /// <summary>
     /// This enumeration lists known accessible event types.
     /// </summary>
-    public enum AccessibleEventType
-    {
+    public enum AccessibleEventType {
         /// <summary>
         ///  Sent when a sound is played.  Currently nothing is generating this, we
         ///  are going to be cleaning up the SOUNDSENTRY feature in the control panel

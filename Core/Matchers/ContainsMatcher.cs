@@ -1,9 +1,7 @@
 ﻿using System.Text.RegularExpressions;
 
-namespace Switcheroo.Core.Matchers
-{
-    public class ContainsMatcher : IMatcher
-    {
+namespace Switcheroo.Core.Matchers {
+    public class ContainsMatcher : IMatcher {
         public MatchResult Evaluate(string input, string pattern)
         {
             if (input == null || pattern == null)

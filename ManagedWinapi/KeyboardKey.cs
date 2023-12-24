@@ -1,15 +1,13 @@
 using System;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows.Forms;
-using System.Runtime.InteropServices;
 
-namespace ManagedWinapi
-{
+namespace ManagedWinapi {
     /// <summary>
     /// This class contains utility methods related to keys on the keyboard.
     /// </summary>
-    public class KeyboardKey
-    {
+    public class KeyboardKey {
         readonly Keys key;
         readonly bool extended;
 

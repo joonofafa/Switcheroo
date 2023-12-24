@@ -18,16 +18,14 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 using System;
-using System.Text;
 using System.Runtime.InteropServices;
+using System.Text;
 
-namespace ManagedWinapi.Windows
-{
+namespace ManagedWinapi.Windows {
     /// <summary>
     /// Any list box, including those from other applications.
     /// </summary>
-    public class SystemListBox
-    {
+    public class SystemListBox {
         /// <summary>
         /// Get a SystemListBox reference from a SystemWindow (which is a list box)
         /// </summary>
@@ -121,8 +119,7 @@ namespace ManagedWinapi.Windows
     /// <summary>
     /// Any combo box, including those from other applications.
     /// </summary>
-    public class SystemComboBox
-    {
+    public class SystemComboBox {
         /// <summary>
         /// Get a SystemComboBox reference from a SystemWindow (which is a combo box)
         /// </summary>

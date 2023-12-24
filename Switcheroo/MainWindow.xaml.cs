@@ -18,15 +18,19 @@
  * along with Switcheroo.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+using ManagedWinapi;
+using ManagedWinapi.Windows;
+using Newtonsoft.Json;
+using Switcheroo.Core;
+using Switcheroo.Core.Matchers;
+using Switcheroo.Properties;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net;
-using System.Reflection;
-using System.Threading.Tasks;
+using System.Security.Policy;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Forms;
@@ -34,29 +38,30 @@ using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
-using ManagedWinapi;
-using ManagedWinapi.Windows;
-using Switcheroo.Core;
-using Switcheroo.Core.Matchers;
-using Switcheroo.Properties;
+using static System.Net.Mime.MediaTypeNames;
 using Application = System.Windows.Application;
 using MenuItem = System.Windows.Forms.MenuItem;
 using MessageBox = System.Windows.MessageBox;
 
-namespace Switcheroo
-{
-    public partial class MainWindow : Window
-    {
+namespace Switcheroo {
+    public class IgnoreItem {
+        public string Name { get; set; }
+    }
+    public partial class MainWindow : Window {
         private WindowCloser _windowCloser;                                             // Used to close windows
         private List<AppWindowViewModel> _unfilteredWindowList;                         // All windows
         private ObservableCollection<AppWindowViewModel> _filteredWindowList;           // Filtered windows
         private List<ListItemInfo> _unfilteredLinkList;                                 // All links
         private List<ListItemInfo> _filteredLinkList;                                   // Filtered links
+        private List<ListItemInfo> _unfilteredWebList;                                  // All links
+        private List<ListItemInfo> _filteredWebList;                                    // Filtered links
+        private List<IgnoreItem> _ignoreList;                                           // Ignore List Items
         private NotifyIcon _notifyIcon;                                                 // System tray icon
         private HotKey _hotkey;                                                         // Hotkey for activating Switcheroo
         private HotKeyForExecuter _hotkeyForExecuter;                                   // Hotkey for activating Switcheroo
         private LinkHandler _linkHandler = null;                                        // Link Handler
-        private bool _isLinkQuiryMode = false;                                               // Link Mode
+        private bool _isLinkQuiryMode = false;                                          // Link Mode
+        private bool _isQuirySearchMode = false;                                        // Quiry Search Mode
 
         public static readonly RoutedUICommand CloseWindowCommand = new RoutedUICommand();
         public static readonly RoutedUICommand SwitchToWindowCommand = new RoutedUICommand();
@@ -75,6 +80,7 @@ namespace Switcheroo
             SetUpNotifyIcon();
             SetUpHotKey();
             SetUpAltTabHook();
+            LoadIgnoreItems();
             Opacity = 0;
         }
 
@@ -157,7 +163,7 @@ namespace Switcheroo
         {
             _hotkey = new HotKey();
             _hotkey.LoadSettings();
-            
+
             _hotkeyForExecuter = new HotKeyForExecuter();
             _hotkeyForExecuter.LoadSettings();
 
@@ -227,6 +233,21 @@ namespace Switcheroo
             }
         }
 
+        private void LoadIgnoreItems()
+        {
+            string jsonFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ignore_list.json");
+
+            try
+            {
+                string json = File.ReadAllText(jsonFilePath);
+                _ignoreList = JsonConvert.DeserializeObject<List<IgnoreItem>>(json);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception : {ex.Message}");
+            }
+        }
+
         /// <summary>
         /// Populates the window list with the current running windows.
         /// </summary>
@@ -234,18 +255,18 @@ namespace Switcheroo
         {
             _isLinkQuiryMode = false;
             _unfilteredWindowList = new WindowFinder().GetWindows().Select(window => new AppWindowViewModel(window)).ToList();
-            foreach (var window in _unfilteredWindowList)
+            foreach (var ignore in  _ignoreList)
             {
-                if (window.WindowTitle.ToUpper().Equals("NEXUSFILE"))
+                var windowToRemove = _unfilteredWindowList.FirstOrDefault(window => window.WindowTitle.ToUpper().Equals(ignore.Name));
+                if (windowToRemove != null)
                 {
-                    _unfilteredWindowList.Remove(window);
-                    break;
+                    _unfilteredWindowList.Remove(windowToRemove);
                 }
             }
 
             var firstWindow = _unfilteredWindowList.FirstOrDefault();
             var foregroundWindowMovedToBottom = false;
-            
+
             // Move first window to the bottom of the list if it's related to the foreground window
             if (firstWindow != null && AreWindowsRelated(firstWindow.AppWindow, _foregroundWindow))
             {
@@ -259,9 +280,9 @@ namespace Switcheroo
 
             foreach (var window in _unfilteredWindowList)
             {
-                window.FormattedTitle = new XamlHighlighter().Highlight(new[] {new StringPart(window.AppWindow.Title)});
+                window.FormattedTitle = new XamlHighlighter().Highlight(new[] { new StringPart(window.AppWindow.Title) });
                 window.FormattedSubTitle =
-                    new XamlHighlighter().Highlight(new[] {new StringPart(window.AppWindow.ProcessTitle)});
+                    new XamlHighlighter().Highlight(new[] { new StringPart(window.AppWindow.ProcessTitle) });
             }
 
             lb.DataContext = null;
@@ -278,14 +299,15 @@ namespace Switcheroo
         private void LoadLinkData(InitialFocus focus)
         {
             _isLinkQuiryMode = true;
-            if (_linkHandler == null) 
-            { 
+            if (_linkHandler == null)
+            {
                 _linkHandler = new LinkHandler();
-                _linkHandler.cacheLinks();
+                _linkHandler.CacheExecutableLinksList();
             }
-            _unfilteredLinkList = _linkHandler.getAllUserLinks();
+            _unfilteredLinkList = _linkHandler.GetAllExecuteableLinksList();
+            _unfilteredWebList = _linkHandler.GetAllSearchList();
             lb.DataContext = null;
- 
+
             tb.Clear();
             tb.Focus();
             CenterWindow();
@@ -328,8 +350,8 @@ namespace Switcheroo
             SizeToContent = SizeToContent.WidthAndHeight;
 
             // Position the window in the center of the screen
-            Left = (SystemParameters.PrimaryScreenWidth/2) - (ActualWidth/2);
-            Top = (SystemParameters.PrimaryScreenHeight/2) - (ActualHeight/2);
+            Left = (SystemParameters.PrimaryScreenWidth / 2) - (ActualWidth / 2);
+            Top = (SystemParameters.PrimaryScreenHeight / 2) - (ActualHeight / 2);
         }
 
         /// <summary>
@@ -346,17 +368,54 @@ namespace Switcheroo
         }
         private void Execute()
         {
-            foreach (var item in lb.SelectedItems)
+            if (!_isQuirySearchMode)
             {
-                var lnk = (ListItemInfo)item;
+                foreach (var item in lb.SelectedItems)
+                {
+                    var lnk = (ListItemInfo)item;
 
-                try
-                {
-                    Process.Start(lnk.TagData);
+                    try
+                    {
+                        if (lnk.IsUrl)
+                        {
+                            var psi = new ProcessStartInfo
+                            {
+                                FileName = lnk.TagData.ToString(),
+                                UseShellExecute = true
+                            };
+                            Process.Start(psi);
+                        }
+                        else
+                        {
+                            Process.Start(lnk.TagData);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Trace.WriteLine(ex.Message);
+                    }
                 }
-                catch (Exception ex)
+            }
+            else
+            {
+                if (lb.SelectedItems.Count > 0)
                 {
-                    Trace.WriteLine(ex.Message);
+                    var lnk = (ListItemInfo)lb.SelectedItems[0];
+
+                    try
+                    {
+                        string[] parts = tb.Text.Split(' ');
+                        var psi = new ProcessStartInfo
+                        {
+                            FileName = lnk.TagData.Replace("{word}", String.Join(" ", parts.Skip(1))),
+                            UseShellExecute = true
+                        };
+                        Process.Start(psi);
+                    }
+                    catch (Exception ex)
+                    {
+                        Trace.WriteLine(ex.Message);
+                    }
                 }
             }
             HideWindow();
@@ -615,29 +674,56 @@ namespace Switcheroo
                 {
                     lb.SelectedItem = lb.Items[0];
                 }
-            } 
+            }
             else
             {
-                if (_unfilteredLinkList.Count > 0)
+                if (_unfilteredLinkList.Count > 0 || _unfilteredWebList.Count > 0)
                 {
-                    var query = tb.Text.Trim();
-
+                    var query = tb.Text;
                     if (query.Length > 0)
                     {
-                        _filteredLinkList = _unfilteredLinkList.Where(
-                                item => item.FormattedTitle.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0 ||
-                                item.FormattedSubTitle.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0)
-                                .ToList();
-
-                        if (_filteredLinkList.Count > 8)
+                        if (query.StartsWith("@"))
                         {
-                            _filteredLinkList.RemoveRange(8, _filteredLinkList.Count - 8);
+                            int spaceIndex = query.IndexOf(' ');
+                            if (spaceIndex != -1)
+                            {
+                                string result = query.Substring(1, spaceIndex).Trim();
+                                _filteredWebList = _unfilteredWebList.Where(
+                                    item => item.FormattedSubTitle.Equals(result, StringComparison.OrdinalIgnoreCase)).ToList();
+
+                                lb.DataContext = _filteredWebList;
+                                if (lb.Items.Count > 0)
+                                {
+                                    _isQuirySearchMode = true;
+                                    lb.SelectedItem = lb.Items[0];
+                                }
+                                else
+                                {
+                                    lb.DataContext = null;
+                                }
+                            }
+                            else
+                            {
+                                lb.DataContext = _unfilteredWebList;
+                            }
                         }
-
-                        lb.DataContext = _filteredLinkList;
-                        if (lb.Items.Count > 0)
+                        else
                         {
-                            lb.SelectedItem = lb.Items[0];
+                            _filteredLinkList = _unfilteredLinkList.Where(
+                                    item => item.FormattedTitle.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0 ||
+                                    item.FormattedSubTitle.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0)
+                                    .ToList();
+
+                            if (_filteredLinkList.Count > 8)
+                            {
+                                _filteredLinkList.RemoveRange(8, _filteredLinkList.Count - 8);
+                            }
+
+                            lb.DataContext = _filteredLinkList;
+                            if (lb.Items.Count > 0)
+                            {
+                                lb.SelectedItem = lb.Items[0];
+                            }
                         }
                     }
                     else
@@ -662,7 +748,7 @@ namespace Switcheroo
             }
             else
             {
-                Switch();                
+                Switch();
             }
             e.Handled = true;
         }
@@ -682,18 +768,21 @@ namespace Switcheroo
 
         private async void CloseWindow(object sender, ExecutedRoutedEventArgs e)
         {
-            var windows = lb.SelectedItems.Cast<AppWindowViewModel>().ToList();
-            foreach (var win in windows)
+            if (!_isLinkQuiryMode)
             {
-                bool isClosed = await _windowCloser.TryCloseAsync(win);
-                if(isClosed)
-                    RemoveWindow(win);
+                var windows = lb.SelectedItems.Cast<AppWindowViewModel>().ToList();
+                foreach (var win in windows)
+                {
+                    bool isClosed = await _windowCloser.TryCloseAsync(win);
+                    if (isClosed)
+                        RemoveWindow(win);
+                }
+
+                if (lb.Items.Count == 0)
+                    HideWindow();
+
+                e.Handled = true;
             }
-
-            if (lb.Items.Count == 0)
-                HideWindow();
-
-            e.Handled = true;
         }
 
         private void RemoveWindow(AppWindowViewModel window)
@@ -798,8 +887,7 @@ namespace Switcheroo
 
         #endregion
 
-        private enum InitialFocus
-        {
+        private enum InitialFocus {
             NextItem,
             PreviousItem
         }

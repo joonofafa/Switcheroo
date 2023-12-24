@@ -18,24 +18,17 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
-using System.Diagnostics;
-using System.Reflection;
-using System.Threading;
 
-namespace ManagedWinapi.Hooks
-{
+namespace ManagedWinapi.Hooks {
     /// <summary>
     /// A hook is a point in the system message-handling mechanism where an application
     /// can install a subroutine to monitor the message traffic in the system and process 
     /// certain types of messages before they reach the target window procedure.
     /// </summary>
-    public class Hook : Component
-    {
+    public class Hook : Component {
         private HookType type;
         internal bool hooked = false;
         private IntPtr hHook;
@@ -225,8 +218,7 @@ namespace ManagedWinapi.Hooks
     /// <summary>
     /// A hook that intercepts local window messages.
     /// </summary>
-    public class LocalMessageHook : Hook
-    {
+    public class LocalMessageHook : Hook {
         /// <summary>
         /// Called when a message has been intercepted.
         /// </summary>
@@ -275,8 +267,7 @@ namespace ManagedWinapi.Hooks
     /// <summary>
     /// Hook Types. See the documentation of SetWindowsHookEx for reference.
     /// </summary>
-    public enum HookType : int
-    {
+    public enum HookType : int {
         ///
         WH_JOURNALRECORD = 0,
         ///

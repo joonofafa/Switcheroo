@@ -20,15 +20,12 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using ManagedWinapi.Windows;
 
-namespace ManagedWinapi.Audio.Mixer
-{
+namespace ManagedWinapi.Audio.Mixer {
     /// <summary>
     /// Represents a mixer line, either a source line or a destination line.
     /// </summary>
-    public abstract class MixerLine : IDisposable
-    {
+    public abstract class MixerLine : IDisposable {
         /// <summary>
         /// Occurs when this line changes.
         /// </summary>
@@ -187,8 +184,7 @@ namespace ManagedWinapi.Audio.Mixer
 
         #region PInvoke Declarations
 
-        internal struct MIXERLINE
-        {
+        internal struct MIXERLINE {
             public int cbStruct;
             public int dwDestination;
             public int dwSource;
@@ -215,7 +211,7 @@ namespace ManagedWinapi.Audio.Mixer
         }
 
         [DllImport("winmm.dll", CharSet = CharSet.Ansi)]
-        internal static extern int mixerGetLineInfoA(IntPtr hmxobj, ref 
+        internal static extern int mixerGetLineInfoA(IntPtr hmxobj, ref
             MIXERLINE pmxl, int fdwInfo);
 
         internal static int MIXER_GETLINEINFOF_DESTINATION = 0;
@@ -229,8 +225,7 @@ namespace ManagedWinapi.Audio.Mixer
     /// each way sound can leave the mixer. Usually there are two destination lines,
     /// one for playback and one for recording.
     /// </summary>
-    public class DestinationLine : MixerLine
-    {
+    public class DestinationLine : MixerLine {
         private DestinationLine(Mixer mixer, MIXERLINE line) : base(mixer, line) { }
 
         /// <summary>
@@ -300,8 +295,7 @@ namespace ManagedWinapi.Audio.Mixer
     /// CD audio, there will be two CD audio source lines, one for the Recording
     /// destination line and one for the Playback destination line.
     /// </summary>
-    public class SourceLine : MixerLine
-    {
+    public class SourceLine : MixerLine {
         private SourceLine(Mixer m, MIXERLINE l) : base(m, l) { }
 
         internal static SourceLine GetLine(Mixer mixer, int destIndex, int srcIndex)
@@ -319,8 +313,7 @@ namespace ManagedWinapi.Audio.Mixer
     /// Types of source or destination lines. The descriptions for these
     /// lines have been taken from http://www.borg.com/~jglatt/tech/mixer.htm.
     /// </summary>
-    public enum MixerLineComponentType
-    {
+    public enum MixerLineComponentType {
         /// <summary>
         /// An undefined destination line type.
         /// </summary>

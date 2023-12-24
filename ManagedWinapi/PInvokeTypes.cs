@@ -1,19 +1,15 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Drawing;
 using System.Runtime.InteropServices;
 
 // from www.pinvoke.net
-namespace ManagedWinapi.Windows
-{
+namespace ManagedWinapi.Windows {
 
     /// <summary>
     /// Wrapper around the Winapi POINT type.
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]
-    public struct POINT
-    {
+    public struct POINT {
         /// <summary>
         /// The X Coordinate.
         /// </summary>
@@ -58,8 +54,7 @@ namespace ManagedWinapi.Windows
     /// Wrapper around the Winapi RECT type.
     /// </summary>
     [Serializable, StructLayout(LayoutKind.Sequential)]
-    public struct RECT
-    {
+    public struct RECT {
         /// <summary>
         /// LEFT
         /// </summary>

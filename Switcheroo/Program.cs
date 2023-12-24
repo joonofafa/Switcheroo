@@ -18,18 +18,16 @@
  * along with Switcheroo.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+using Switcheroo.Properties;
 using System;
 using System.Configuration;
 using System.Diagnostics;
 using System.Reflection;
 using System.Security.Principal;
 using System.Threading;
-using Switcheroo.Properties;
 
-namespace Switcheroo
-{
-    internal class Program
-    {
+namespace Switcheroo {
+    internal class Program {
         private const string mutex_id = "DBDE24E4-91F6-11DF-B495-C536DFD72085-switcheroo";
 
         [STAThread]

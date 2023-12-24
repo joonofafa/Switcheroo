@@ -19,18 +19,15 @@
  */
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows.Forms;
-using System.Runtime.InteropServices;
-using System.Drawing;
 
-namespace ManagedWinapi.Windows
-{
+namespace ManagedWinapi.Windows {
     /// <summary>
     /// Any tree view, including those from other applications.
     /// </summary>
-    public class SystemTreeView
-    {
+    public class SystemTreeView {
         /// <summary>
         /// Get a SystemTreeView reference from a SystemWindow (which is a tree view)
         /// </summary>
@@ -103,8 +100,7 @@ namespace ManagedWinapi.Windows
     /// <summary>
     /// An item of a tree view.
     /// </summary>
-    public class SystemTreeViewItem
-    {
+    public class SystemTreeViewItem {
         readonly IntPtr handle;
         readonly SystemWindow sw;
 
@@ -152,8 +148,7 @@ namespace ManagedWinapi.Windows
         private static readonly uint TVM_GETITEM = 0x1100 + 12, TVIF_TEXT = 1;
 
         [StructLayout(LayoutKind.Sequential)]
-        private struct TVITEM
-        {
+        private struct TVITEM {
             public UInt32 mask;
             public IntPtr hItem;
             public UInt32 state;

@@ -22,16 +22,13 @@ using System;
 using System.ComponentModel;
 using System.Drawing;
 
-namespace Switcheroo.Core
-{
-    public enum WindowIconSize
-    {
+namespace Switcheroo.Core {
+    public enum WindowIconSize {
         Small,
         Large
     }
 
-    public class WindowIconFinder
-    {
+    public class WindowIconFinder {
         public Icon Find(AppWindow window, WindowIconSize size)
         {
             Icon icon = null;
