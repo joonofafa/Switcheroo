@@ -232,5 +232,13 @@ namespace Switcheroo
             get { return _bitmapImage;}
             set { _bitmapImage = value; }
         }
+
+        private string _tagData;
+
+        public string TagData
+        {
+            get { return _tagData; }
+            set { _tagData = value; }
+        }
     }
 }

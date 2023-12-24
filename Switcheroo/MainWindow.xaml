@@ -170,31 +170,27 @@
                                     <ColumnDefinition Width="700" />
                                     <ColumnDefinition Width="100" />
                                 </Grid.ColumnDefinitions>
-                                <Image Height="30" Grid.Row="0" Grid.Column="0" Margin="3,0" VerticalAlignment="Center" Source="{Binding ImageSource}">
-                                </Image>
-                                <!--
-                                <Image Height="30" Grid.Row="0" Grid.Column="0" Margin="3,0"
-                                       Opacity="{Binding IsBeingClosed, Converter={StaticResource ImageOpacityConverter}, Mode=OneTime}">
-                                    <Image.Style>
-                                        <Style TargetType="{x:Type Image}">
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding ImageSource}" Value="{x:Null}">
-                                                    <DataTrigger.Setters>
-                                                        <Setter Property="Source">
-                                                            <Setter.Value>
-                                                                <PriorityBinding>
-                                                                    <Binding Path="HWnd" Converter="{StaticResource WindowHandleToIconConverter}" IsAsync="True" />
-                                                                    <Binding Path="HWnd" Converter="{StaticResource WindowHandleToCachedIconConverter}" />
-                                                                </PriorityBinding>
-                                                            </Setter.Value>
-                                                        </Setter>
-                                                    </DataTrigger.Setters>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Image.Style>
-                                </Image>
-                                -->
+								<Image Height="30" Grid.Row="0" Grid.Column="0" Margin="3,0">
+									<Image.Style>
+										<Style TargetType="{x:Type Image}">
+											<Setter Property="Source" Value="{Binding ImageSource}"/>
+											<Style.Triggers>
+												<DataTrigger Binding="{Binding ImageSource}" Value="{x:Null}">
+													<Setter Property="Source">
+														<Setter.Value>
+															<PriorityBinding>
+																<!-- 첫 번째: 메인 바인딩 -->
+																<Binding Path="HWnd" Converter="{StaticResource WindowHandleToIconConverter}" IsAsync="True" />
+																<!-- 두 번째: 대체 바인딩 -->
+																<Binding Path="HWnd" Converter="{StaticResource WindowHandleToCachedIconConverter}" />
+															</PriorityBinding>
+														</Setter.Value>
+													</Setter>
+												</DataTrigger>
+											</Style.Triggers>
+										</Style>
+									</Image.Style>
+								</Image>
                                 <TextBlock local:FormattedTextAttribute.FormattedText="{Binding Path=FormattedTitle}"
                                            Grid.Row="0" Grid.Column="1" Margin="3,0" VerticalAlignment="Center" FontFamily="KT font Light">
                                     <TextBlock.Foreground>

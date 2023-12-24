@@ -56,7 +56,7 @@ namespace Switcheroo
         private HotKey _hotkey;                                                         // Hotkey for activating Switcheroo
         private HotKeyForExecuter _hotkeyForExecuter;                                   // Hotkey for activating Switcheroo
         private LinkHandler _linkHandler = null;                                        // Link Handler
-        private bool _isLinkMode = false;                                               // Link Mode
+        private bool _isLinkQuiryMode = false;                                               // Link Mode
 
         public static readonly RoutedUICommand CloseWindowCommand = new RoutedUICommand();
         public static readonly RoutedUICommand SwitchToWindowCommand = new RoutedUICommand();
@@ -71,15 +71,10 @@ namespace Switcheroo
         public MainWindow()
         {
             InitializeComponent();
-
             SetUpKeyBindings();
-
             SetUpNotifyIcon();
-
             SetUpHotKey();
-
             SetUpAltTabHook();
-
             Opacity = 0;
         }
 
@@ -120,7 +115,14 @@ namespace Switcheroo
                 // ... But only when the keys are release, the action is actually executed
                 if (args.Key == Key.Enter && !Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
                 {
-                    Switch();
+                    if (_isLinkQuiryMode)
+                    {
+                        Execute();
+                    }
+                    else
+                    {
+                        Switch();
+                    }
                 }
                 else if (args.Key == Key.Escape)
                 {
@@ -128,11 +130,25 @@ namespace Switcheroo
                 }
                 else if (args.SystemKey == Key.LeftAlt && !Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
                 {
-                    Switch();
+                    if (_isLinkQuiryMode)
+                    {
+                        Execute();
+                    }
+                    else
+                    {
+                        Switch();
+                    }
                 }
                 else if (args.Key == Key.LeftAlt && _altTabAutoSwitch)
                 {
-                    Switch();
+                    if (_isLinkQuiryMode)
+                    {
+                        Execute();
+                    }
+                    else
+                    {
+                        Switch();
+                    }
                 }
             };
         }
@@ -215,7 +231,7 @@ namespace Switcheroo
         /// </summary>
         private void LoadData(InitialFocus focus)
         {
-            _isLinkMode = false;
+            _isLinkQuiryMode = false;
             _unfilteredWindowList = new WindowFinder().GetWindows().Select(window => new AppWindowViewModel(window)).ToList();
             foreach (var window in _unfilteredWindowList)
             {
@@ -260,16 +276,15 @@ namespace Switcheroo
 
         private void LoadLinkData(InitialFocus focus)
         {
-            _isLinkMode = true;
+            _isLinkQuiryMode = true;
             if (_linkHandler == null) 
             { 
                 _linkHandler = new LinkHandler();
                 _linkHandler.cacheLinks();
             }
             _unfilteredLinkList = _linkHandler.getAllUserLinks();
-
             lb.DataContext = null;
-
+ 
             tb.Clear();
             tb.Focus();
             CenterWindow();
@@ -325,6 +340,23 @@ namespace Switcheroo
             {
                 var win = (AppWindowViewModel)item;
                 win.AppWindow.SwitchToLastVisibleActivePopup();
+            }
+            HideWindow();
+        }
+        private void Execute()
+        {
+            foreach (var item in lb.SelectedItems)
+            {
+                var lnk = (ListItemInfo)item;
+
+                try
+                {
+                    Process.Start(lnk.TagData);
+                }
+                catch (Exception ex)
+                {
+                    Trace.WriteLine(ex.Message);
+                }
             }
             HideWindow();
         }
@@ -558,7 +590,7 @@ namespace Switcheroo
                 return;
             }
 
-            if (!_isLinkMode)
+            if (!_isLinkQuiryMode)
             {
                 var query = tb.Text;
                 var context = new WindowFilterContext<AppWindowViewModel>
@@ -623,13 +655,27 @@ namespace Switcheroo
 
         private void OnEnterPressed(object sender, ExecutedRoutedEventArgs e)
         {
-            Switch();
+            if (_isLinkQuiryMode)
+            {
+                Execute();
+            }
+            else
+            {
+                Switch();                
+            }
             e.Handled = true;
         }
 
         private void ListBoxItem_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            Switch();
+            if (_isLinkQuiryMode)
+            {
+                Execute();
+            }
+            else
+            {
+                Switch();
+            }
             e.Handled = true;
         }
 

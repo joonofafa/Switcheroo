@@ -217,6 +217,15 @@
     <Resource Include="icon.ico" />
   </ItemGroup>
   <ItemGroup>
+    <COMReference Include="EnhancedStorageShellLib">
+      <Guid>{B3A00612-1423-4072-A4F9-DE2ADCAA7F3C}</Guid>
+      <VersionMajor>1</VersionMajor>
+      <VersionMinor>0</VersionMinor>
+      <Lcid>0</Lcid>
+      <WrapperTool>tlbimp</WrapperTool>
+      <Isolated>False</Isolated>
+      <EmbedInteropTypes>True</EmbedInteropTypes>
+    </COMReference>
     <COMReference Include="IWshRuntimeLibrary">
       <Guid>{F935DC20-1CF0-11D0-ADB9-00C04FD58A0B}</Guid>
       <VersionMajor>1</VersionMajor>

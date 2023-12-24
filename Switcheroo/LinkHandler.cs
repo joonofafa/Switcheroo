@@ -2,19 +2,21 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Runtime.InteropServices;
 using System.Drawing;
 using System.Windows.Media.Imaging;
-using System.Windows.Documents;
 using System.Diagnostics;
-using System.Windows;
-using System.Windows.Forms;
 using IWshRuntimeLibrary;
+using System.Runtime.InteropServices;
+using System.Text;
+using System.Runtime.InteropServices.ComTypes;
 
 namespace Switcheroo {
     class LinkHandler {
+
+        [DllImport("shell32.dll", CharSet = CharSet.Auto)]
+        extern static int ExtractIconEx(string lpszFile, int nIconIndex, out IntPtr largeIcon, out IntPtr smallIcon, int nIcons);
+        [DllImport("user32.dll", SetLastError = true)]
+        extern static bool DestroyIcon(IntPtr hIcon);
 
         private List<ListItemInfo> _listItemInfos = new List<ListItemInfo>();
 
@@ -26,12 +28,12 @@ namespace Switcheroo {
                 List<string> lnkFiles = FindLnkFiles(startMenuPath);
                 foreach (var file in lnkFiles)
                 {
-                    Trace.WriteLine("file = [" + file + "]");
                     ListItemInfo listItemInfo = new ListItemInfo
                     {
                         FormattedTitle = Path.GetFileNameWithoutExtension(file),
-                        FormattedSubTitle = Path.GetFileNameWithoutExtension(GetShortcutTarget(file)),
-                        ImageSource = GetIconImageFromShortcut(file)
+                        FormattedSubTitle = Path.GetFileNameWithoutExtension(file),
+                        ImageSource = GetIconImageFromShortcut(file),
+                        TagData = file,
                     };
                     _listItemInfos.Add(listItemInfo);
                 }
@@ -49,51 +51,30 @@ namespace Switcheroo {
 
         private BitmapImage GetIconImageFromShortcut(string shortcutPath)
         {
-            // 바로 가기에서 아이콘 위치 추출
             WshShell shell = new WshShell();
             IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(shortcutPath);
             string iconLocation = shortcut.IconLocation;
+            string targetPath = shortcut.TargetPath;
 
-            // 아이콘 위치가 비어있지 않은지 확인
             if (string.IsNullOrEmpty(iconLocation))
             {
-                // 기본 아이콘 처리 또는 오류 처리
                 return null;
             }
 
-            // 아이콘 위치에서 파일 경로와 인덱스 분리
             string[] iconPathParts = iconLocation.Split(',');
-            string iconPath = iconPathParts[0];
+            string iconPath = (iconPathParts[0].Trim().Length > 1) ? iconPathParts[0].Trim() : targetPath;
             int iconIndex = (iconPathParts.Length > 1) ? int.Parse(iconPathParts[1]) : 0;
 
-            // 아이콘 추출
-            Icon icon;
             try
             {
-                icon = Icon.ExtractAssociatedIcon(iconPath);
-                Bitmap bitmap = icon.ToBitmap();
-                using (MemoryStream memory = new MemoryStream())
-                {
-                    bitmap.Save(memory, System.Drawing.Imaging.ImageFormat.Png);
-                    memory.Position = 0;
-                    BitmapImage bitmapImage = new BitmapImage();
-                    bitmapImage.BeginInit();
-                    bitmapImage.StreamSource = memory;
-                    bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
-                    bitmapImage.EndInit();
-                    bitmapImage.Freeze();
-                    Trace.WriteLine("* 이미지 등록 성공! [" + shortcutPath + "]");
-                    return bitmapImage;
-                }
+                return GetIconImageFromExecutable(iconPath, iconIndex);
             }
             catch (ArgumentException)
             {
-                Trace.WriteLine("*! 이미지 등록 실패(경로) [" + shortcutPath + "]");
-                return null;
+                return GetIconImageFromExecutable("C:\\Windows\\System32\\shell32.dll", 2);
             }
             catch (FileNotFoundException)
             {
-                Trace.WriteLine("*! 이미지 등록 실패(파일 없음) [" + shortcutPath + "]");
                 return null;
             }
         }
@@ -103,11 +84,34 @@ namespace Switcheroo {
             return _listItemInfos;
         }
 
-        static string GetShortcutTarget(string lnkFilePath)
+        public string GetShortcutTarget(string lnkFilePath)
         {
             WshShell shell = new WshShell();
             IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(lnkFilePath);
             return shortcut.TargetPath;
+        }
+        public BitmapImage GetIconImageFromExecutable(string exePath, int iconIndex)
+        {
+            ExtractIconEx(exePath, iconIndex, out IntPtr largeIcon, out _, 1);
+
+            Icon icon = Icon.FromHandle(largeIcon);
+            BitmapImage bitmapImage;
+            using (Bitmap bitmap = icon.ToBitmap())
+            {
+                using (MemoryStream memory = new MemoryStream())
+                {
+                    bitmap.Save(memory, System.Drawing.Imaging.ImageFormat.Png);
+                    memory.Position = 0;
+                    bitmapImage = new BitmapImage();
+                    bitmapImage.BeginInit();
+                    bitmapImage.StreamSource = memory;
+                    bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+                    bitmapImage.EndInit();
+                    bitmapImage.Freeze();
+                }
+            }
+            DestroyIcon(largeIcon);
+            return bitmapImage;
         }
     }
 }
