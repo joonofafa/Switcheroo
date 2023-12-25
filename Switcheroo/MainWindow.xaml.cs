@@ -35,6 +35,7 @@ using System.Windows.Controls;
 using System.Windows.Forms;
 using System.Windows.Input;
 using System.Windows.Interop;
+using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using Application = System.Windows.Application;
@@ -251,6 +252,7 @@ namespace Switcheroo {
         /// </summary>
         private void LoadData(InitialFocus focus)
         {
+            tb.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FF68686F"));
             _isLinkQuiryMode = false;
             _unfilteredWindowList = new WindowFinder().GetWindows().Select(window => new AppWindowViewModel(window)).ToList();
             foreach (var ignore in _ignoreList)
@@ -296,6 +298,8 @@ namespace Switcheroo {
 
         private void LoadLinkData(InitialFocus focus)
         {
+            tb.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FF515173"));
+
             _isLinkQuiryMode = true;
             if (_linkHandler == null)
             {
@@ -385,7 +389,7 @@ namespace Switcheroo {
                         }
                         else
                         {
-                            if (lnk.Argument.Length > 0)
+                            if (lnk.Argument != null)
                             {
                                 var psi = new ProcessStartInfo
                                 {
