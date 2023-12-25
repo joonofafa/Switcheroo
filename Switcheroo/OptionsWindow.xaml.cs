@@ -195,7 +195,7 @@ namespace Switcheroo {
             e.Handled = true;
 
             // Fetch the actual shortcut key
-            var key = (e.Key == Key.System ? e.SystemKey : e.Key);
+            var key = e.Key == Key.System ? e.SystemKey : e.Key;
 
             // Ignore modifier keys
             if (key == Key.LeftShift || key == Key.RightShift
@@ -252,7 +252,7 @@ namespace Switcheroo {
             e.Handled = true;
 
             // Fetch the actual shortcut key
-            var key = (e.Key == Key.System ? e.SystemKey : e.Key);
+            var key = e.Key == Key.System ? e.SystemKey : e.Key;
 
             // Ignore modifier keys
             if (key == Key.LeftShift || key == Key.RightShift

@@ -63,8 +63,7 @@ namespace Switcheroo {
                 return cachedSetting.Value;
             }
 
-            using (
-                var registryKey =
+            using (var registryKey =
                     Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"))
             {
                 if (registryKey == null)

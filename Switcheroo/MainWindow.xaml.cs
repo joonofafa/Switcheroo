@@ -30,7 +30,6 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Security.Policy;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Forms;
@@ -38,7 +37,6 @@ using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
-using static System.Net.Mime.MediaTypeNames;
 using Application = System.Windows.Application;
 using MenuItem = System.Windows.Forms.MenuItem;
 using MessageBox = System.Windows.MessageBox;
@@ -170,8 +168,8 @@ namespace Switcheroo {
             Application.Current.Properties["hotkey"] = _hotkey;
             Application.Current.Properties["lnkHotkey"] = _hotkeyForExecuter;
 
-            _hotkey.HotkeyPressed += hotkey_HotkeyPressed;
-            _hotkeyForExecuter.HotkeyPressed += hotkey_HotkeyForExecuterPressed;
+            _hotkey.HotkeyPressed += Hotkey_HotkeyPressed;
+            _hotkeyForExecuter.HotkeyPressed += Hotkey_HotkeyForExecuterPressed;
             try
             {
                 _hotkey.Enabled = Settings.Default.EnableHotKey;
@@ -255,7 +253,7 @@ namespace Switcheroo {
         {
             _isLinkQuiryMode = false;
             _unfilteredWindowList = new WindowFinder().GetWindows().Select(window => new AppWindowViewModel(window)).ToList();
-            foreach (var ignore in  _ignoreList)
+            foreach (var ignore in _ignoreList)
             {
                 var windowToRemove = _unfilteredWindowList.FirstOrDefault(window => window.WindowTitle.ToUpper().Equals(ignore.Name));
                 if (windowToRemove != null)
@@ -387,7 +385,20 @@ namespace Switcheroo {
                         }
                         else
                         {
-                            Process.Start(lnk.TagData);
+                            if (lnk.Argument.Length > 0)
+                            {
+                                var psi = new ProcessStartInfo
+                                {
+                                    FileName = lnk.TagData.ToString(),
+                                    Arguments = lnk.Argument,
+                                    UseShellExecute = true
+                                };
+                                Process.Start(psi);
+                            }
+                            else
+                            {
+                                Process.Start(lnk.TagData);
+                            }
                         }
                     }
                     catch (Exception ex)
@@ -505,7 +516,7 @@ namespace Switcheroo {
             HideWindow();
         }
 
-        private void hotkey_HotkeyPressed(object sender, EventArgs e)
+        private void Hotkey_HotkeyPressed(object sender, EventArgs e)
         {
             if (!Settings.Default.EnableHotKey)
             {
@@ -529,9 +540,8 @@ namespace Switcheroo {
             }
         }
 
-        private void hotkey_HotkeyForExecuterPressed(object sender, EventArgs e)
+        private void Hotkey_HotkeyForExecuterPressed(object sender, EventArgs e)
         {
-            Trace.WriteLine("Called hotkey_HotkeyForExecuterPressed()!");
             if (!Settings.Default.EnableLnkHotkey)
             {
                 return;
@@ -650,9 +660,9 @@ namespace Switcheroo {
                 return;
             }
 
+            var query = tb.Text;
             if (!_isLinkQuiryMode)
             {
-                var query = tb.Text;
                 var context = new WindowFilterContext<AppWindowViewModel>
                 {
                     Windows = _unfilteredWindowList,
@@ -679,7 +689,6 @@ namespace Switcheroo {
             {
                 if (_unfilteredLinkList.Count > 0 || _unfilteredWebList.Count > 0)
                 {
-                    var query = tb.Text;
                     if (query.Length > 0)
                     {
                         if (query.StartsWith("@"))
@@ -706,6 +715,18 @@ namespace Switcheroo {
                             {
                                 lb.DataContext = _unfilteredWebList;
                             }
+                        }
+                        else if (query.StartsWith("?"))
+                        {
+                            List<ListItemInfo> everythingItem = new List<ListItemInfo>
+                            {
+                                new ListItemInfo("Everything Search (" + query.Replace("?", "") + ")", "Everying",
+                                _linkHandler.GetEverythingIcon(), Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Everything.exe"), false,
+                                "-s " + query.Replace("?", ""))
+                            };
+
+                            lb.DataContext = everythingItem;
+                            lb.SelectedIndex = 0;
                         }
                         else
                         {

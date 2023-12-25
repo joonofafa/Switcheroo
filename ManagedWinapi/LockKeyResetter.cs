@@ -62,7 +62,7 @@ namespace ManagedWinapi {
             }
             KeyboardKey capslockKey = new KeyboardKey(Keys.CapsLock);
             int capslockstate = capslockKey.State;
-            capslock = ((capslockstate & 0x01) == 0x01);
+            capslock = (capslockstate & 0x01) == 0x01;
             if (capslock)
             {
                 // press caps lock

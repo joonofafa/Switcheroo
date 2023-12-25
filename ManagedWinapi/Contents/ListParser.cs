@@ -188,14 +188,14 @@ namespace ManagedWinapi.Windows.Contents {
 
         internal override bool CanParseContent(SystemWindow sw)
         {
-            uint LVM_GETITEMCOUNT = (0x1000 + 4);
+            uint LVM_GETITEMCOUNT = 0x1000 + 4;
             int cnt = sw.SendGetMessage(LVM_GETITEMCOUNT);
             return cnt != 0;
         }
 
         internal override WindowContent ParseContent(SystemWindow sw)
         {
-            uint LVM_GETITEMCOUNT = (0x1000 + 4);
+            uint LVM_GETITEMCOUNT = 0x1000 + 4;
             int cnt = sw.SendGetMessage(LVM_GETITEMCOUNT);
             if (cnt == 0) throw new Exception();
             SystemAccessibleObject o = SystemAccessibleObject.FromWindow(sw, AccessibleObjectID.OBJID_CLIENT);

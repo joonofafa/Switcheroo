@@ -1,15 +1,13 @@
-﻿using IniParser.Model;
-using IniParser;
+﻿using IniParser;
+using IniParser.Model;
 using IWshRuntimeLibrary;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text.RegularExpressions;
 using System.Windows.Media.Imaging;
 
 namespace Switcheroo {
@@ -29,6 +27,8 @@ namespace Switcheroo {
 
         private List<ListItemInfo> _listExecInfo = new List<ListItemInfo>();
         private List<ListItemInfo> _listSearchInfo = new List<ListItemInfo>();
+        private readonly IconToBitmapImageConverter _iconToBitmapImageConverter = new IconToBitmapImageConverter();
+        private BitmapImage _everythingImage = null;
         private static readonly string ICON_DEFAULT_PATH = "C:\\Windows\\System32\\shell32.dll";
         private static readonly int ICON_DEFAULT_INDEX = 2;
         private static readonly int ICON_WEB_INDEX = 13;
@@ -50,7 +50,7 @@ namespace Switcheroo {
                         _listExecInfo.Add(itemInfo);
                     }
                 }
-                
+
                 lnkFiles = FindUrlFiles(startMenuPath);
                 foreach (var file in lnkFiles)
                 {
@@ -74,7 +74,7 @@ namespace Switcheroo {
                         _listExecInfo.Add(itemInfo);
                     }
                 }
-                
+
                 lnkFiles = FindUrlFiles(programsPath);
                 foreach (var file in lnkFiles)
                 {
@@ -88,6 +88,15 @@ namespace Switcheroo {
 
             MakeUWPAppList();
             MakeSearchList();
+        }
+
+        public BitmapImage GetEverythingIcon()
+        { 
+            if (_everythingImage == null)
+            {
+                _everythingImage = GetIconImageFromExecutable(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Everything.exe"), 0);
+            }
+            return _everythingImage;
         }
 
         private void MakeUWPAppList()
@@ -226,29 +235,15 @@ namespace Switcheroo {
         public BitmapImage GetIconImageFromExecutable(string exePath, int iconIndex)
         {
             ExtractIconEx(exePath, iconIndex, out IntPtr largeIcon, out _, 1);
-
-            Icon icon = Icon.FromHandle(largeIcon);
             BitmapImage bitmapImage = null;
+            Icon icon = Icon.FromHandle(largeIcon);
 
             try
             {
-                using (Bitmap bitmap = icon.ToBitmap())
-                {
-                    using (MemoryStream memory = new MemoryStream())
-                    {
-                        bitmap.Save(memory, System.Drawing.Imaging.ImageFormat.Png);
-                        memory.Position = 0;
-                        bitmapImage = new BitmapImage();
-                        bitmapImage.BeginInit();
-                        bitmapImage.StreamSource = memory;
-                        bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
-                        bitmapImage.EndInit();
-                        bitmapImage.Freeze();
-                    }
-                }
-                DestroyIcon(largeIcon);
+                bitmapImage = _iconToBitmapImageConverter.Convert(icon);
             }
             catch (Exception) { }
+            DestroyIcon(largeIcon);
             return bitmapImage;
         }
 
@@ -258,22 +253,8 @@ namespace Switcheroo {
 
             try
             {
-                using (Icon ico = new Icon(iconPath))
-                {
-                    using (Bitmap bmp = ico.ToBitmap())
-                    {
-                        var memoryStream = new MemoryStream();
-                        bmp.Save(memoryStream, System.Drawing.Imaging.ImageFormat.Png);
-                        memoryStream.Position = 0;
-
-                        bitmapImage = new BitmapImage();
-                        bitmapImage.BeginInit();
-                        bitmapImage.StreamSource = memoryStream;
-                        bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
-                        bitmapImage.EndInit();
-                        bitmapImage.Freeze();
-                    }
-                }
+                Icon icon = new Icon(iconPath);
+                bitmapImage = _iconToBitmapImageConverter.Convert(icon);
             }
             catch (Exception) { }
             return bitmapImage;

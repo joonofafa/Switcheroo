@@ -178,7 +178,7 @@ namespace ManagedWinapi.Audio.Mixer {
             }
             for (int i = 0; i < controlCount; i++)
             {
-                mc[i] = (MIXERCONTROL)Marshal.PtrToStructure(new IntPtr(mlc.pamxctrl.ToInt64() + mxsize * i), typeof(MIXERCONTROL));
+                mc[i] = (MIXERCONTROL)Marshal.PtrToStructure(new IntPtr(mlc.pamxctrl.ToInt64() + (mxsize * i)), typeof(MIXERCONTROL));
             }
             Marshal.FreeCoTaskMem(mlc.pamxctrl);
             MixerControl[] result = new MixerControl[controlCount];
@@ -320,7 +320,7 @@ namespace ManagedWinapi.Audio.Mixer {
                 }
                 for (int i = 0; i < result.Length; i++)
                 {
-                    mcdu = (MIXERCONTROLDETAILS_UNSIGNED)Marshal.PtrToStructure(new IntPtr(mcd.paDetails.ToInt64() + Marshal.SizeOf(mcdu) * i), typeof(MIXERCONTROLDETAILS_UNSIGNED));
+                    mcdu = (MIXERCONTROLDETAILS_UNSIGNED)Marshal.PtrToStructure(new IntPtr(mcd.paDetails.ToInt64() + (Marshal.SizeOf(mcdu) * i)), typeof(MIXERCONTROLDETAILS_UNSIGNED));
                     result[i] = mcdu.dwValue;
                 }
                 return result;
@@ -341,7 +341,7 @@ namespace ManagedWinapi.Audio.Mixer {
                 for (int i = 0; i < value.Length; i++)
                 {
                     mcdu.dwValue = value[i];
-                    Marshal.StructureToPtr(mcdu, new IntPtr(mcd.paDetails.ToInt64() + Marshal.SizeOf(mcdu) * i), false);
+                    Marshal.StructureToPtr(mcdu, new IntPtr(mcd.paDetails.ToInt64() + (Marshal.SizeOf(mcdu) * i)), false);
                 }
 
                 int err;
@@ -383,7 +383,7 @@ namespace ManagedWinapi.Audio.Mixer {
                 }
                 for (int i = 0; i < result.Length; i++)
                 {
-                    mcdb = (MIXERCONTROLDETAILS_BOOLEAN)Marshal.PtrToStructure(new IntPtr(mcd.paDetails.ToInt64() + Marshal.SizeOf(mcdb) * i), typeof(MIXERCONTROLDETAILS_BOOLEAN));
+                    mcdb = (MIXERCONTROLDETAILS_BOOLEAN)Marshal.PtrToStructure(new IntPtr(mcd.paDetails.ToInt64() + (Marshal.SizeOf(mcdb) * i)), typeof(MIXERCONTROLDETAILS_BOOLEAN));
                     result[i] = mcdb.fValue != 0;
                 }
                 return result;
@@ -404,7 +404,7 @@ namespace ManagedWinapi.Audio.Mixer {
                 for (int i = 0; i < value.Length; i++)
                 {
                     mcdb.fValue = value[i] ? 1 : 0;
-                    Marshal.StructureToPtr(mcdb, new IntPtr(mcd.paDetails.ToInt64() + Marshal.SizeOf(mcdb) * i), false);
+                    Marshal.StructureToPtr(mcdb, new IntPtr(mcd.paDetails.ToInt64() + (Marshal.SizeOf(mcdb) * i)), false);
                 }
                 int err;
                 if ((err = mixerSetControlDetails(mx.Handle, ref mcd, 0)) != 0)
@@ -527,64 +527,64 @@ namespace ManagedWinapi.Audio.Mixer {
         ///
         MIXERCONTROL_CT_UNITS_PERCENT = 0x00050000, /* in 10ths */
         ///
-        MIXERCONTROL_CONTROLTYPE_CUSTOM = (MixerControlClass.CUSTOM | MIXERCONTROL_CT_UNITS_CUSTOM),
+        MIXERCONTROL_CONTROLTYPE_CUSTOM = MixerControlClass.CUSTOM | MIXERCONTROL_CT_UNITS_CUSTOM,
         ///
-        MIXERCONTROL_CONTROLTYPE_BOOLEANMETER = (MixerControlClass.METER | MIXERCONTROL_CT_SC_METER_POLLED | MIXERCONTROL_CT_UNITS_BOOLEAN),
+        MIXERCONTROL_CONTROLTYPE_BOOLEANMETER = MixerControlClass.METER | MIXERCONTROL_CT_SC_METER_POLLED | MIXERCONTROL_CT_UNITS_BOOLEAN,
         ///
-        MIXERCONTROL_CONTROLTYPE_SIGNEDMETER = (MixerControlClass.METER | MIXERCONTROL_CT_SC_METER_POLLED | MIXERCONTROL_CT_UNITS_SIGNED),
+        MIXERCONTROL_CONTROLTYPE_SIGNEDMETER = MixerControlClass.METER | MIXERCONTROL_CT_SC_METER_POLLED | MIXERCONTROL_CT_UNITS_SIGNED,
         ///
-        MIXERCONTROL_CONTROLTYPE_PEAKMETER = (MIXERCONTROL_CONTROLTYPE_SIGNEDMETER + 1),
+        MIXERCONTROL_CONTROLTYPE_PEAKMETER = MIXERCONTROL_CONTROLTYPE_SIGNEDMETER + 1,
         ///
-        MIXERCONTROL_CONTROLTYPE_UNSIGNEDMETER = (MixerControlClass.METER | MIXERCONTROL_CT_SC_METER_POLLED | MIXERCONTROL_CT_UNITS_UNSIGNED),
+        MIXERCONTROL_CONTROLTYPE_UNSIGNEDMETER = MixerControlClass.METER | MIXERCONTROL_CT_SC_METER_POLLED | MIXERCONTROL_CT_UNITS_UNSIGNED,
         ///
-        MIXERCONTROL_CONTROLTYPE_BOOLEAN = (MixerControlClass.SWITCH | MIXERCONTROL_CT_SC_SWITCH_BOOLEAN | MIXERCONTROL_CT_UNITS_BOOLEAN),
+        MIXERCONTROL_CONTROLTYPE_BOOLEAN = MixerControlClass.SWITCH | MIXERCONTROL_CT_SC_SWITCH_BOOLEAN | MIXERCONTROL_CT_UNITS_BOOLEAN,
         ///
-        MIXERCONTROL_CONTROLTYPE_ONOFF = (MIXERCONTROL_CONTROLTYPE_BOOLEAN + 1),
+        MIXERCONTROL_CONTROLTYPE_ONOFF = MIXERCONTROL_CONTROLTYPE_BOOLEAN + 1,
         ///
-        MIXERCONTROL_CONTROLTYPE_MUTE = (MIXERCONTROL_CONTROLTYPE_BOOLEAN + 2),
+        MIXERCONTROL_CONTROLTYPE_MUTE = MIXERCONTROL_CONTROLTYPE_BOOLEAN + 2,
         ///
-        MIXERCONTROL_CONTROLTYPE_MONO = (MIXERCONTROL_CONTROLTYPE_BOOLEAN + 3),
+        MIXERCONTROL_CONTROLTYPE_MONO = MIXERCONTROL_CONTROLTYPE_BOOLEAN + 3,
         ///
-        MIXERCONTROL_CONTROLTYPE_LOUDNESS = (MIXERCONTROL_CONTROLTYPE_BOOLEAN + 4),
+        MIXERCONTROL_CONTROLTYPE_LOUDNESS = MIXERCONTROL_CONTROLTYPE_BOOLEAN + 4,
         ///
-        MIXERCONTROL_CONTROLTYPE_STEREOENH = (MIXERCONTROL_CONTROLTYPE_BOOLEAN + 5),
+        MIXERCONTROL_CONTROLTYPE_STEREOENH = MIXERCONTROL_CONTROLTYPE_BOOLEAN + 5,
         ///
-        MIXERCONTROL_CONTROLTYPE_BUTTON = (MixerControlClass.SWITCH | MIXERCONTROL_CT_SC_SWITCH_BUTTON | MIXERCONTROL_CT_UNITS_BOOLEAN),
+        MIXERCONTROL_CONTROLTYPE_BUTTON = MixerControlClass.SWITCH | MIXERCONTROL_CT_SC_SWITCH_BUTTON | MIXERCONTROL_CT_UNITS_BOOLEAN,
         ///
-        MIXERCONTROL_CONTROLTYPE_DECIBELS = (MixerControlClass.NUMBER | MIXERCONTROL_CT_UNITS_DECIBELS),
+        MIXERCONTROL_CONTROLTYPE_DECIBELS = MixerControlClass.NUMBER | MIXERCONTROL_CT_UNITS_DECIBELS,
         ///
-        MIXERCONTROL_CONTROLTYPE_SIGNED = (MixerControlClass.NUMBER | MIXERCONTROL_CT_UNITS_SIGNED),
+        MIXERCONTROL_CONTROLTYPE_SIGNED = MixerControlClass.NUMBER | MIXERCONTROL_CT_UNITS_SIGNED,
         ///
-        MIXERCONTROL_CONTROLTYPE_UNSIGNED = (MixerControlClass.NUMBER | MIXERCONTROL_CT_UNITS_UNSIGNED),
+        MIXERCONTROL_CONTROLTYPE_UNSIGNED = MixerControlClass.NUMBER | MIXERCONTROL_CT_UNITS_UNSIGNED,
         ///
-        MIXERCONTROL_CONTROLTYPE_PERCENT = (MixerControlClass.NUMBER | MIXERCONTROL_CT_UNITS_PERCENT),
+        MIXERCONTROL_CONTROLTYPE_PERCENT = MixerControlClass.NUMBER | MIXERCONTROL_CT_UNITS_PERCENT,
         ///
-        MIXERCONTROL_CONTROLTYPE_SLIDER = (MixerControlClass.SLIDER | MIXERCONTROL_CT_UNITS_SIGNED),
+        MIXERCONTROL_CONTROLTYPE_SLIDER = MixerControlClass.SLIDER | MIXERCONTROL_CT_UNITS_SIGNED,
         ///
-        MIXERCONTROL_CONTROLTYPE_PAN = (MixerControlClass.SLIDER + 1),
+        MIXERCONTROL_CONTROLTYPE_PAN = MixerControlClass.SLIDER + 1,
         ///
-        MIXERCONTROL_CONTROLTYPE_QSOUNDPAN = (MIXERCONTROL_CONTROLTYPE_SLIDER + 2),
+        MIXERCONTROL_CONTROLTYPE_QSOUNDPAN = MIXERCONTROL_CONTROLTYPE_SLIDER + 2,
         ///
-        MIXERCONTROL_CONTROLTYPE_FADER = (MixerControlClass.FADER | MIXERCONTROL_CT_UNITS_UNSIGNED),
+        MIXERCONTROL_CONTROLTYPE_FADER = MixerControlClass.FADER | MIXERCONTROL_CT_UNITS_UNSIGNED,
         ///
-        MIXERCONTROL_CONTROLTYPE_VOLUME = (MIXERCONTROL_CONTROLTYPE_FADER + 1),
+        MIXERCONTROL_CONTROLTYPE_VOLUME = MIXERCONTROL_CONTROLTYPE_FADER + 1,
         ///
-        MIXERCONTROL_CONTROLTYPE_BASS = (MIXERCONTROL_CONTROLTYPE_FADER + 2),
+        MIXERCONTROL_CONTROLTYPE_BASS = MIXERCONTROL_CONTROLTYPE_FADER + 2,
         ///
-        MIXERCONTROL_CONTROLTYPE_TREBLE = (MIXERCONTROL_CONTROLTYPE_FADER + 3),
+        MIXERCONTROL_CONTROLTYPE_TREBLE = MIXERCONTROL_CONTROLTYPE_FADER + 3,
         ///
-        MIXERCONTROL_CONTROLTYPE_EQUALIZER = (MIXERCONTROL_CONTROLTYPE_FADER + 4),
+        MIXERCONTROL_CONTROLTYPE_EQUALIZER = MIXERCONTROL_CONTROLTYPE_FADER + 4,
         ///
-        MIXERCONTROL_CONTROLTYPE_SINGLESELECT = (MixerControlClass.LIST | MIXERCONTROL_CT_SC_LIST_SINGLE | MIXERCONTROL_CT_UNITS_BOOLEAN),
+        MIXERCONTROL_CONTROLTYPE_SINGLESELECT = MixerControlClass.LIST | MIXERCONTROL_CT_SC_LIST_SINGLE | MIXERCONTROL_CT_UNITS_BOOLEAN,
         ///
-        MIXERCONTROL_CONTROLTYPE_MUX = (MIXERCONTROL_CONTROLTYPE_SINGLESELECT + 1),
+        MIXERCONTROL_CONTROLTYPE_MUX = MIXERCONTROL_CONTROLTYPE_SINGLESELECT + 1,
         ///
-        MIXERCONTROL_CONTROLTYPE_MULTIPLESELECT = (MixerControlClass.LIST | MIXERCONTROL_CT_SC_LIST_MULTIPLE | MIXERCONTROL_CT_UNITS_BOOLEAN),
+        MIXERCONTROL_CONTROLTYPE_MULTIPLESELECT = MixerControlClass.LIST | MIXERCONTROL_CT_SC_LIST_MULTIPLE | MIXERCONTROL_CT_UNITS_BOOLEAN,
         ///
-        MIXERCONTROL_CONTROLTYPE_MIXER = (MIXERCONTROL_CONTROLTYPE_MULTIPLESELECT + 1),
+        MIXERCONTROL_CONTROLTYPE_MIXER = MIXERCONTROL_CONTROLTYPE_MULTIPLESELECT + 1,
         ///
-        MIXERCONTROL_CONTROLTYPE_MICROTIME = (MixerControlClass.TIME | MIXERCONTROL_CT_SC_TIME_MICROSECS | MIXERCONTROL_CT_UNITS_UNSIGNED),
+        MIXERCONTROL_CONTROLTYPE_MICROTIME = MixerControlClass.TIME | MIXERCONTROL_CT_SC_TIME_MICROSECS | MIXERCONTROL_CT_UNITS_UNSIGNED,
         ///
-        MIXERCONTROL_CONTROLTYPE_MILLITIME = (MixerControlClass.TIME | MIXERCONTROL_CT_SC_TIME_MILLISECS | MIXERCONTROL_CT_UNITS_UNSIGNED),
+        MIXERCONTROL_CONTROLTYPE_MILLITIME = MixerControlClass.TIME | MIXERCONTROL_CT_SC_TIME_MILLISECS | MIXERCONTROL_CT_UNITS_UNSIGNED,
     }
 }

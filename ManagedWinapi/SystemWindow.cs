@@ -647,7 +647,7 @@ namespace ManagedWinapi.Windows {
         {
             get
             {
-                return (WindowStyleFlags)(long)GetWindowLongPtr(_hwnd, (int)(GWL.GWL_STYLE));
+                return (WindowStyleFlags)(long)GetWindowLongPtr(_hwnd, (int)GWL.GWL_STYLE);
             }
             set
             {
@@ -663,7 +663,7 @@ namespace ManagedWinapi.Windows {
         {
             get
             {
-                return (WindowExStyleFlags)GetWindowLongPtr(_hwnd, (int)(GWL.GWL_EXSTYLE));
+                return (WindowExStyleFlags)GetWindowLongPtr(_hwnd, (int)GWL.GWL_EXSTYLE);
             }
             set
             {
@@ -1240,13 +1240,13 @@ namespace ManagedWinapi.Windows {
         private static extern IntPtr GetWindowLongPtr64(IntPtr hWnd, int nIndex);
 
         private enum GWL : int {
-            GWL_WNDPROC = (-4),
-            GWL_HINSTANCE = (-6),
-            GWL_HWNDPARENT = (-8),
-            GWL_STYLE = (-16),
-            GWL_EXSTYLE = (-20),
-            GWL_USERDATA = (-21),
-            GWL_ID = (-12)
+            GWL_WNDPROC = -4,
+            GWL_HINSTANCE = -6,
+            GWL_HWNDPARENT = -8,
+            GWL_STYLE = -16,
+            GWL_EXSTYLE = -20,
+            GWL_USERDATA = -21,
+            GWL_ID = -12
         }
 
         [DllImport("user32.dll")]

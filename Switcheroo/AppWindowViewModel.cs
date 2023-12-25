@@ -203,6 +203,16 @@ namespace Switcheroo {
             IsUrl = isUrl;
         }
 
+        public ListItemInfo(string title, string subTitle, BitmapImage imageSource, string tagData, bool isUrl, string argument)
+        {
+            FormattedTitle = title;
+            FormattedSubTitle = subTitle;
+            ImageSource = imageSource;
+            TagData = tagData;
+            IsUrl = isUrl;
+            Argument = argument;
+        }
+
         private string _formattedTitle;
 
         public string FormattedTitle
@@ -238,7 +248,14 @@ namespace Switcheroo {
         public bool IsUrl
         {
             get { return _isUrl; }
-            set { _isUrl = value; } 
+            set { _isUrl = value; }
+        }
+
+        private string _argument;
+        public string Argument
+        {
+            get { return _argument; }
+            set { _argument = value; }
         }
     }
 }

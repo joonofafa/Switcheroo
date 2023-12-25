@@ -132,12 +132,12 @@ namespace ManagedWinapi.Windows {
 
         #region PInvoke Declarations
 
-        internal static readonly uint LVM_GETITEMRECT = (0x1000 + 14),
-            LVM_SETITEMPOSITION = (0x1000 + 15),
-            LVM_GETITEMPOSITION = (0x1000 + 16),
-            LVM_GETITEMCOUNT = (0x1000 + 4),
+        internal static readonly uint LVM_GETITEMRECT = 0x1000 + 14,
+            LVM_SETITEMPOSITION = 0x1000 + 15,
+            LVM_GETITEMPOSITION = 0x1000 + 16,
+            LVM_GETITEMCOUNT = 0x1000 + 4,
             LVM_GETITEM = 0x1005,
-            LVM_GETCOLUMN = (0x1000 + 25);
+            LVM_GETCOLUMN = 0x1000 + 25;
 
         private static readonly uint LVIF_TEXT = 0x1,
             LVIF_IMAGE = 0x2,
