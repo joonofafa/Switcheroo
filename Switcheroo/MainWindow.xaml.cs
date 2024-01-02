@@ -30,6 +30,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Forms;
@@ -720,6 +721,7 @@ namespace Switcheroo {
                                 lb.DataContext = _unfilteredWebList;
                             }
                         }
+                        /*
                         else if (query.StartsWith("?"))
                         {
                             List<ListItemInfo> everythingItem = new List<ListItemInfo>
@@ -731,13 +733,13 @@ namespace Switcheroo {
 
                             lb.DataContext = everythingItem;
                             lb.SelectedIndex = 0;
-                        }
+                        }*/
                         else
                         {
                             _filteredLinkList = _unfilteredLinkList.Where(
                                     item => item.FormattedTitle.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0 ||
                                     item.FormattedSubTitle.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0)
-                                    .ToList();
+                                    .ToList();   
 
                             if (_filteredLinkList.Count > 8)
                             {
@@ -759,7 +761,7 @@ namespace Switcheroo {
             }
         }
 
-        private static string GetFormattedTitleFromBestResult(IList<MatchResult> matchResults)
+        private string GetFormattedTitleFromBestResult(IList<MatchResult> matchResults)
         {
             var bestResult = matchResults.FirstOrDefault(r => r.Matched) ?? matchResults.First();
             return new XamlHighlighter().Highlight(bestResult.StringParts);
@@ -900,7 +902,7 @@ namespace Switcheroo {
         {
             var windowHandle = new WindowInteropHelper(this).Handle;
             var window = new SystemWindow(windowHandle);
-            window.Style = window.Style & ~WindowStyleFlags.SYSMENU;
+            window.Style &= ~WindowStyleFlags.SYSMENU;
         }
 
         private void ShowHelpTextBlock_OnPreviewMouseDown(object sender, MouseButtonEventArgs e)
