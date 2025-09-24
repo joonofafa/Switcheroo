@@ -31,6 +31,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Forms;
@@ -297,7 +298,7 @@ namespace Switcheroo {
             ScrollSelectedItemIntoView();
         }
 
-        private void LoadLinkData(InitialFocus focus)
+        private async Task LoadLinkData(InitialFocus focus)
         {
             tb.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FF515173"));
 
@@ -305,7 +306,7 @@ namespace Switcheroo {
             if (_linkHandler == null)
             {
                 _linkHandler = new LinkHandler();
-                _linkHandler.CacheExecutableLinksList();
+                await _linkHandler.CacheExecutableLinksList();
             }
             _unfilteredLinkList = _linkHandler.GetAllExecuteableLinksList();
             _unfilteredWebList = _linkHandler.GetAllSearchList();
@@ -545,7 +546,7 @@ namespace Switcheroo {
             }
         }
 
-        private void Hotkey_HotkeyForExecuterPressed(object sender, EventArgs e)
+        private async void Hotkey_HotkeyForExecuterPressed(object sender, EventArgs e)
         {
             if (!Settings.Default.EnableLnkHotkey)
             {
@@ -560,7 +561,7 @@ namespace Switcheroo {
                 Show();
                 Activate();
                 Keyboard.Focus(tb);
-                LoadLinkData(InitialFocus.NextItem);
+                await LoadLinkData(InitialFocus.NextItem);
                 Opacity = 1;
             }
             else
@@ -726,9 +727,17 @@ namespace Switcheroo {
                         {
                             List<ListItemInfo> everythingItem = new List<ListItemInfo>
                             {
-                                new ListItemInfo("Everything Search (" + query.Replace("?", "") + ")", "Everying",
-                                _linkHandler.GetEverythingIcon(), Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Everything.exe"), false,
-                                "-s " + query.Replace("?", ""))
+                                new ListItemInfo
+                                {
+                                    FormattedTitle = "Everything Search (" + query.Replace("?", "") + ")",
+                                    FormattedSubTitle = "Everything",
+                                    TagData = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Everything.exe"),
+                                    IsUrl = false,
+                                    Argument = "-s " + query.Replace("?", ""),
+                                    IconPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Everything.exe"),
+                                    IconIndex = 0,
+                                    IsDefaultIcon = false
+                                }
                             };
 
                             lb.DataContext = everythingItem;

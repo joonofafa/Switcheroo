@@ -182,9 +182,9 @@
 								<Image Height="30" Grid.Row="0" Grid.Column="0" Margin="3,0">
 									<Image.Style>
 										<Style TargetType="{x:Type Image}">
-											<Setter Property="Source" Value="{Binding ImageSource}"/>
+											<Setter Property="Source" Value="{Binding LazyImageSource}"/>
 											<Style.Triggers>
-												<DataTrigger Binding="{Binding ImageSource}" Value="{x:Null}">
+												<DataTrigger Binding="{Binding LazyImageSource}" Value="{x:Null}">
 													<Setter Property="Source">
 														<Setter.Value>
 															<PriorityBinding>

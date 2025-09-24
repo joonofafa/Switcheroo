@@ -3,12 +3,12 @@ using IniParser.Model;
 using IWshRuntimeLibrary;
 using Newtonsoft.Json;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Windows.Media.Imaging;
+using System.Threading.Tasks;
 
 namespace Switcheroo {
 
@@ -20,84 +20,95 @@ namespace Switcheroo {
 
     class LinkHandler {
 
-        [DllImport("shell32.dll", CharSet = CharSet.Auto)]
-        extern static int ExtractIconEx(string lpszFile, int nIconIndex, out IntPtr largeIcon, out IntPtr smallIcon, int nIcons);
-        [DllImport("user32.dll", SetLastError = true)]
-        extern static bool DestroyIcon(IntPtr hIcon);
-
-        private List<ListItemInfo> _listExecInfo = new List<ListItemInfo>();
+        private readonly ConcurrentBag<ListItemInfo> _listExecInfo = new ConcurrentBag<ListItemInfo>();
         private List<ListItemInfo> _listSearchInfo = new List<ListItemInfo>();
-        private readonly IconToBitmapImageConverter _iconToBitmapImageConverter = new IconToBitmapImageConverter();
-        private BitmapImage _everythingImage = null;
         private static readonly string ICON_DEFAULT_PATH = "C:\\Windows\\System32\\shell32.dll";
         private static readonly int ICON_DEFAULT_INDEX = 2;
         private static readonly int ICON_WEB_INDEX = 13;
 
-        public void CacheExecutableLinksList()
+        public async Task CacheExecutableLinksList()
         {
+            // Clear existing data
+            while (!_listExecInfo.IsEmpty)
+            {
+                _listExecInfo.TryTake(out _);
+            }
+
+            // Collect all file paths from both locations
+            var allLnkFiles = new List<string>();
+            var allUrlFiles = new List<string>();
+
             string startMenuPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonStartMenu), "Programs");
-            List<string> lnkFiles;
-            ListItemInfo itemInfo;
-
-            if (Directory.Exists(startMenuPath))
-            {
-                lnkFiles = FindLnkFiles(startMenuPath);
-                foreach (var file in lnkFiles)
-                {
-                    itemInfo = GetLinkItemInfoFromShortcut(file);
-                    if (itemInfo != null)
-                    {
-                        _listExecInfo.Add(itemInfo);
-                    }
-                }
-
-                lnkFiles = FindUrlFiles(startMenuPath);
-                foreach (var file in lnkFiles)
-                {
-                    itemInfo = GetUrlFromShortcut(file);
-                    if (itemInfo != null)
-                    {
-                        _listExecInfo.Add(itemInfo);
-                    }
-                }
-            }
-
             string programsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs");
-            if (Directory.Exists(programsPath))
+
+            // Collect files from both locations
+            await Task.Run(() =>
             {
-                lnkFiles = FindLnkFiles(programsPath);
-                foreach (var file in lnkFiles)
+                if (Directory.Exists(startMenuPath))
                 {
-                    itemInfo = GetLinkItemInfoFromShortcut(file);
-                    if (itemInfo != null)
-                    {
-                        _listExecInfo.Add(itemInfo);
-                    }
+                    allLnkFiles.AddRange(FindLnkFiles(startMenuPath));
+                    allUrlFiles.AddRange(FindUrlFiles(startMenuPath));
                 }
 
-                lnkFiles = FindUrlFiles(programsPath);
-                foreach (var file in lnkFiles)
+                if (Directory.Exists(programsPath))
                 {
-                    itemInfo = GetUrlFromShortcut(file);
-                    if (itemInfo != null)
-                    {
-                        _listExecInfo.Add(itemInfo);
-                    }
+                    allLnkFiles.AddRange(FindLnkFiles(programsPath));
+                    allUrlFiles.AddRange(FindUrlFiles(programsPath));
                 }
-            }
+            });
 
-            MakeUWPAppList();
-            MakeSearchList();
-        }
-
-        public BitmapImage GetEverythingIcon()
-        { 
-            if (_everythingImage == null)
+            // Process .lnk files in parallel
+            await Task.Run(() =>
             {
-                _everythingImage = GetIconImageFromExecutable(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Everything.exe"), 0);
-            }
-            return _everythingImage;
+                Parallel.ForEach(allLnkFiles, file =>
+                {
+                    try
+                    {
+                        var itemInfo = GetLinkItemInfoFromShortcut(file);
+                        if (itemInfo != null)
+                        {
+                            _listExecInfo.Add(itemInfo);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log exception if needed, but continue processing other files
+                        Console.WriteLine($"Error processing .lnk file {file}: {ex.Message}");
+                    }
+                });
+            });
+
+            // Process .url files in parallel
+            await Task.Run(() =>
+            {
+                Parallel.ForEach(allUrlFiles, file =>
+                {
+                    try
+                    {
+                        var itemInfo = GetUrlFromShortcut(file);
+                        if (itemInfo != null)
+                        {
+                            _listExecInfo.Add(itemInfo);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log exception if needed, but continue processing other files
+                        Console.WriteLine($"Error processing .url file {file}: {ex.Message}");
+                    }
+                });
+            });
+
+            // These can also run in parallel
+            await Task.Run(() =>
+            {
+                Parallel.Invoke(
+                    () => MakeUWPAppList(),
+                    () => MakeSearchList()
+                );
+            });
         }
+
 
         private void MakeUWPAppList()
         {
@@ -110,7 +121,17 @@ namespace Switcheroo {
 
                 foreach (var app in uwpApps)
                 {
-                    _listExecInfo.Add(new ListItemInfo(app.Name, app.Key, GetIconImageFromExecutable(ICON_DEFAULT_PATH, ICON_DEFAULT_INDEX), app.Uri, false));
+                    var listItem = new ListItemInfo
+                    {
+                        FormattedTitle = app.Name,
+                        FormattedSubTitle = app.Key,
+                        TagData = app.Uri,
+                        IsUrl = false,
+                        IconPath = ICON_DEFAULT_PATH,
+                        IconIndex = ICON_DEFAULT_INDEX,
+                        IsDefaultIcon = true
+                    };
+                    _listExecInfo.Add(listItem);
                 }
             }
             catch (Exception ex)
@@ -130,7 +151,17 @@ namespace Switcheroo {
 
                 foreach (var app in searhSites)
                 {
-                    _listSearchInfo.Add(new ListItemInfo(app.Name, app.Key, GetIconImageFromExecutable(ICON_DEFAULT_PATH, ICON_WEB_INDEX), app.Uri, true));
+                    var listItem = new ListItemInfo
+                    {
+                        FormattedTitle = app.Name,
+                        FormattedSubTitle = app.Key,
+                        TagData = app.Uri,
+                        IsUrl = true,
+                        IconPath = ICON_DEFAULT_PATH,
+                        IconIndex = ICON_WEB_INDEX,
+                        IsDefaultIcon = true
+                    };
+                    _listSearchInfo.Add(listItem);
                 }
             }
             catch (Exception ex)
@@ -159,72 +190,148 @@ namespace Switcheroo {
 
         private ListItemInfo GetUrlFromShortcut(string filePath)
         {
-            var parser = new FileIniDataParser();
-            IniData data = parser.ReadFile(filePath);
-            ListItemInfo listItemInfo = new ListItemInfo();
-
             try
             {
-                string url = data["InternetShortcut"]["URL"].Trim();
-                string iconPath = data["InternetShortcut"]["IconFile"].Trim();
-
-                listItemInfo.FormattedTitle = Path.GetFileNameWithoutExtension(filePath);
-                listItemInfo.FormattedSubTitle = Path.GetFileNameWithoutExtension(filePath);
-                listItemInfo.TagData = url;
-                if (iconPath.Length > 0)
+                var parser = new FileIniDataParser();
+                IniData data = parser.ReadFile(filePath);
+                
+                if (data == null || !data.Sections.ContainsSection("InternetShortcut"))
                 {
-                    listItemInfo.ImageSource = GetIconImageFromIconFile(iconPath);
+                    return null;
+                }
+
+                var internetShortcutSection = data["InternetShortcut"];
+                
+                // URL is required
+                if (!internetShortcutSection.ContainsKey("URL") || string.IsNullOrEmpty(internetShortcutSection["URL"]))
+                {
+                    return null;
+                }
+
+                string url = internetShortcutSection["URL"].Trim();
+                string iconPath = "";
+
+                // IconFile is optional
+                if (internetShortcutSection.ContainsKey("IconFile") && !string.IsNullOrEmpty(internetShortcutSection["IconFile"]))
+                {
+                    iconPath = internetShortcutSection["IconFile"].Trim();
+                }
+
+                ListItemInfo listItemInfo = new ListItemInfo
+                {
+                    FormattedTitle = Path.GetFileNameWithoutExtension(filePath),
+                    FormattedSubTitle = Path.GetFileNameWithoutExtension(filePath),
+                    TagData = url,
+                    IsUrl = true
+                };
+
+                if (!string.IsNullOrEmpty(iconPath))
+                {
+                    listItemInfo.IconPath = iconPath;
+                    listItemInfo.IconIndex = 0;
+                    listItemInfo.IsDefaultIcon = false;
                 }
                 else
                 {
-                    listItemInfo.ImageSource = GetIconImageFromExecutable(ICON_DEFAULT_PATH, ICON_DEFAULT_INDEX);
+                    listItemInfo.IconPath = ICON_DEFAULT_PATH;
+                    listItemInfo.IconIndex = ICON_DEFAULT_INDEX;
+                    listItemInfo.IsDefaultIcon = true;
                 }
-                listItemInfo.IsUrl = true;
+
+                return listItemInfo;
             }
-            catch
+            catch (Exception ex)
             {
-                listItemInfo = null;
+                // Log the specific error for debugging
+                Console.WriteLine($"Error processing URL file {filePath}: {ex.Message}");
+                return null;
             }
-            return listItemInfo;
         }
 
         private ListItemInfo GetLinkItemInfoFromShortcut(string shortcutPath)
         {
-            WshShell shell = new WshShell();
-            IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(shortcutPath);
-            string iconLocation = shortcut.IconLocation;
-            string targetPath = shortcut.TargetPath;
-            ListItemInfo listItemInfo = new ListItemInfo();
-
-            listItemInfo.FormattedTitle = Path.GetFileNameWithoutExtension(shortcutPath);
-            listItemInfo.FormattedSubTitle = Path.GetFileNameWithoutExtension(targetPath);
-            listItemInfo.TagData = shortcutPath;
-            listItemInfo.ImageSource = null;
-            listItemInfo.IsUrl = false;
-
-            if (string.IsNullOrEmpty(iconLocation))
-            {
-                return listItemInfo;
-            }
-
-            string[] iconPathParts = iconLocation.Split(',');
-            string iconPath = (iconPathParts[0].Trim().Length > 1) ? iconPathParts[0].Trim() : targetPath;
-            int iconIndex = (iconPathParts.Length > 1) ? int.Parse(iconPathParts[1]) : 0;
+            WshShell shell = null;
+            IWshShortcut shortcut = null;
 
             try
             {
-                listItemInfo.ImageSource = GetIconImageFromExecutable(iconPath, iconIndex);
+                shell = new WshShell();
+                shortcut = (IWshShortcut)shell.CreateShortcut(shortcutPath);
+                
+                if (shortcut == null)
+                {
+                    return null;
+                }
+
+                string iconLocation = shortcut.IconLocation ?? "";
+                string targetPath = shortcut.TargetPath ?? "";
+                
+                ListItemInfo listItemInfo = new ListItemInfo
+                {
+                    FormattedTitle = Path.GetFileNameWithoutExtension(shortcutPath),
+                    FormattedSubTitle = Path.GetFileNameWithoutExtension(targetPath),
+                    TagData = shortcutPath,
+                    ImageSource = null,
+                    IsUrl = false
+                };
+
+                if (string.IsNullOrEmpty(iconLocation))
+                {
+                    listItemInfo.IconPath = ICON_DEFAULT_PATH;
+                    listItemInfo.IconIndex = ICON_DEFAULT_INDEX;
+                    listItemInfo.IsDefaultIcon = true;
+                    return listItemInfo;
+                }
+
+                try
+                {
+                    string[] iconPathParts = iconLocation.Split(',');
+                    string iconPath = (!string.IsNullOrEmpty(iconPathParts[0].Trim()) && iconPathParts[0].Trim().Length > 1) 
+                                    ? iconPathParts[0].Trim() 
+                                    : targetPath;
+                    
+                    int iconIndex = 0;
+                    if (iconPathParts.Length > 1 && int.TryParse(iconPathParts[1].Trim(), out int parsedIndex))
+                    {
+                        iconIndex = parsedIndex;
+                    }
+
+                    listItemInfo.IconPath = iconPath;
+                    listItemInfo.IconIndex = iconIndex;
+                    listItemInfo.IsDefaultIcon = false;
+                }
+                catch (Exception)
+                {
+                    listItemInfo.IconPath = ICON_DEFAULT_PATH;
+                    listItemInfo.IconIndex = ICON_DEFAULT_INDEX;
+                    listItemInfo.IsDefaultIcon = true;
+                }
+
+                return listItemInfo;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                listItemInfo.ImageSource = GetIconImageFromExecutable(ICON_DEFAULT_PATH, ICON_DEFAULT_INDEX);
+                // Log the specific error for debugging
+                Console.WriteLine($"Error processing shortcut file {shortcutPath}: {ex.Message}");
+                return null;
             }
-            return listItemInfo;
+            finally
+            {
+                // COM 객체 리소스 해제
+                if (shortcut != null)
+                {
+                    System.Runtime.InteropServices.Marshal.ReleaseComObject(shortcut);
+                }
+                if (shell != null)
+                {
+                    System.Runtime.InteropServices.Marshal.ReleaseComObject(shell);
+                }
+            }
         }
 
         public List<ListItemInfo> GetAllExecuteableLinksList()
         {
-            return _listExecInfo;
+            return _listExecInfo.ToList();
         }
 
         public List<ListItemInfo> GetAllSearchList()
@@ -232,32 +339,5 @@ namespace Switcheroo {
             return _listSearchInfo;
         }
 
-        public BitmapImage GetIconImageFromExecutable(string exePath, int iconIndex)
-        {
-            ExtractIconEx(exePath, iconIndex, out IntPtr largeIcon, out _, 1);
-            BitmapImage bitmapImage = null;
-            Icon icon = Icon.FromHandle(largeIcon);
-
-            try
-            {
-                bitmapImage = _iconToBitmapImageConverter.Convert(icon);
-            }
-            catch (Exception) { }
-            DestroyIcon(largeIcon);
-            return bitmapImage;
-        }
-
-        public BitmapImage GetIconImageFromIconFile(string iconPath)
-        {
-            BitmapImage bitmapImage = null;
-
-            try
-            {
-                Icon icon = new Icon(iconPath);
-                bitmapImage = _iconToBitmapImageConverter.Convert(icon);
-            }
-            catch (Exception) { }
-            return bitmapImage;
-        }
     }
 }
