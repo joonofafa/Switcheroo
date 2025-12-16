@@ -48,6 +48,43 @@ namespace Switcheroo {
     public class IgnoreItem {
         public string Name { get; set; }
     }
+
+    /// <summary>
+    /// Enum for macro functions
+    /// </summary>
+    public enum MacroFunction
+    {
+        PATH_MACRO,     // Navigate to specified path
+        // Future functions can be added here
+    }
+
+    /// <summary>
+    /// Execute action for function key macro
+    /// </summary>
+    public class ExecuteAction
+    {
+        [JsonProperty("func")]
+        public string Func { get; set; }
+
+        [JsonProperty("value")]
+        public string Value { get; set; }
+    }
+
+    /// <summary>
+    /// Function key macro definition
+    /// </summary>
+    public class FunctionKeyMacro
+    {
+        [JsonProperty("key")]
+        public string Key { get; set; }
+
+        [JsonProperty("process_list")]
+        public string ProcessList { get; set; }
+
+        [JsonProperty("execute_list")]
+        public ExecuteAction ExecuteList { get; set; }
+    }
+
     public partial class MainWindow : Window {
         private WindowCloser _windowCloser;                                             // Used to close windows
         private List<AppWindowViewModel> _unfilteredWindowList;                         // All windows
@@ -63,6 +100,10 @@ namespace Switcheroo {
         private LinkHandler _linkHandler = null;                                        // Link Handler
         private bool _isLinkQuiryMode = false;                                          // Link Mode
         private bool _isQuirySearchMode = false;                                        // Quiry Search Mode
+        private bool _isFileExplorerMode = false;                                       // File Explorer Mode
+        private bool _suppressTextChanged = false;                                      // Suppress TextChanged event
+        private string _currentExplorerPath = "";                                       // Current explorer path
+        private List<FunctionKeyMacro> _functionKeyMacros;                              // Function key macros
 
         public static readonly RoutedUICommand CloseWindowCommand = new RoutedUICommand();
         public static readonly RoutedUICommand SwitchToWindowCommand = new RoutedUICommand();
@@ -82,6 +123,7 @@ namespace Switcheroo {
             SetUpHotKey();
             SetUpAltTabHook();
             LoadIgnoreItems();
+            LoadFunctionKeyMacros();
             Opacity = 0;
         }
 
@@ -114,6 +156,25 @@ namespace Switcheroo {
                     tb.Text = "";
                     tb.IsEnabled = true;
                     tb.Focus();
+                }
+            };
+
+            // PreviewKeyDown to intercept Tab key and Function keys
+            PreviewKeyDown += (sender, args) =>
+            {
+                // Tab key - Bash-style auto-completion or directory navigation
+                if (args.Key == Key.Tab && _isFileExplorerMode && !Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+                {
+                    HandleTabKeyInFileExplorer();
+                    args.Handled = true;
+                }
+                // Function keys (F1-F12) - execute macros in Executer mode
+                else if (_isLinkQuiryMode && args.Key >= Key.F1 && args.Key <= Key.F12)
+                {
+                    if (TryExecuteFunctionKeyMacro(args.Key))
+                    {
+                        args.Handled = true;
+                    }
                 }
             };
 
@@ -247,6 +308,118 @@ namespace Switcheroo {
             {
                 Console.WriteLine($"Exception : {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// Load function key macros from func_list.json
+        /// </summary>
+        private void LoadFunctionKeyMacros()
+        {
+            _functionKeyMacros = new List<FunctionKeyMacro>();
+            string jsonFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "func_list.json");
+
+            try
+            {
+                if (File.Exists(jsonFilePath))
+                {
+                    string json = File.ReadAllText(jsonFilePath);
+                    _functionKeyMacros = JsonConvert.DeserializeObject<List<FunctionKeyMacro>>(json) ?? new List<FunctionKeyMacro>();
+                    Debug.WriteLine($"Loaded {_functionKeyMacros.Count} function key macros");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error loading func_list.json: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Execute function key macro if defined
+        /// </summary>
+        private bool TryExecuteFunctionKeyMacro(Key key)
+        {
+            if (_functionKeyMacros == null || _functionKeyMacros.Count == 0)
+                return false;
+
+            // Convert Key to string (e.g., Key.F5 -> "F5")
+            string keyName = key.ToString();
+
+            // Find matching macro
+            var macro = _functionKeyMacros.FirstOrDefault(m => 
+                m.Key.Equals(keyName, StringComparison.OrdinalIgnoreCase));
+
+            if (macro == null || macro.ExecuteList == null)
+                return false;
+
+            // Execute the macro based on function type
+            return ExecuteMacroFunction(macro.ExecuteList);
+        }
+
+        /// <summary>
+        /// Execute macro function
+        /// </summary>
+        private bool ExecuteMacroFunction(ExecuteAction action)
+        {
+            if (action == null || string.IsNullOrEmpty(action.Func))
+                return false;
+
+            // Parse function type
+            if (Enum.TryParse<MacroFunction>(action.Func, true, out MacroFunction func))
+            {
+                switch (func)
+                {
+                    case MacroFunction.PATH_MACRO:
+                        return ExecutePathMacro(action.Value);
+                    // Future functions can be added here
+                    default:
+                        return false;
+                }
+            }
+
+            // Also support the original name with typo (PATH_MARCO)
+            if (action.Func.Equals("PATH_MARCO", StringComparison.OrdinalIgnoreCase))
+            {
+                return ExecutePathMacro(action.Value);
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Execute PATH_MACRO function - navigate to specified path
+        /// </summary>
+        private bool ExecutePathMacro(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                return false;
+
+            // Ensure we're in Executer mode
+            if (!_isLinkQuiryMode)
+                return false;
+
+            _suppressTextChanged = true;
+            
+            // Set the path in text box
+            if (Directory.Exists(path))
+            {
+                tb.Text = path.EndsWith("\\") ? path : path + "\\";
+            }
+            else if (File.Exists(path))
+            {
+                tb.Text = path;
+            }
+            else
+            {
+                tb.Text = path;
+            }
+            
+            tb.CaretIndex = tb.Text.Length;
+            _suppressTextChanged = false;
+
+            // Handle as file explorer input
+            HandleFileExplorerInput(tb.Text);
+
+            return true;
         }
 
         /// <summary>
@@ -416,6 +589,13 @@ namespace Switcheroo {
         }
         private void Execute()
         {
+            // Handle file explorer mode
+            if (_isFileExplorerMode)
+            {
+                ExecuteFileExplorerAction();
+                return;
+            }
+
             if (!_isQuirySearchMode)
             {
                 foreach (var item in lb.SelectedItems)
@@ -482,6 +662,502 @@ namespace Switcheroo {
             HideWindow();
         }
 
+        #region File Explorer Methods
+
+        /// <summary>
+        /// Get list of available drives
+        /// </summary>
+        private List<ListItemInfo> GetDriveList()
+        {
+            var driveList = new List<ListItemInfo>();
+            
+            foreach (var drive in DriveInfo.GetDrives())
+            {
+                try
+                {
+                    if (drive.IsReady)
+                    {
+                        string driveLabel = string.IsNullOrEmpty(drive.VolumeLabel) 
+                            ? $"Local Disk ({drive.Name.TrimEnd('\\')})" 
+                            : $"{drive.VolumeLabel} ({drive.Name.TrimEnd('\\')})";
+                        
+                        driveList.Add(new ListItemInfo
+                        {
+                            FormattedTitle = driveLabel,
+                            FormattedSubTitle = drive.DriveType.ToString(),
+                            TagData = drive.Name,
+                            IsUrl = false,
+                            IconPath = drive.Name,
+                            IconIndex = 0,
+                            IsDefaultIcon = false
+                        });
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Error accessing drive: {ex.Message}");
+                }
+            }
+            
+            return driveList;
+        }
+
+        /// <summary>
+        /// Get list of directories and files in the specified path
+        /// </summary>
+        private List<ListItemInfo> GetDirectoryContents(string path)
+        {
+            var contentList = new List<ListItemInfo>();
+            
+            try
+            {
+                if (!Directory.Exists(path))
+                    return contentList;
+
+                // Add parent directory option if not root
+                var dirInfo = new DirectoryInfo(path);
+                if (dirInfo.Parent != null)
+                {
+                    contentList.Add(new ListItemInfo
+                    {
+                        FormattedTitle = "..",
+                        FormattedSubTitle = "Parent Directory",
+                        TagData = dirInfo.Parent.FullName,
+                        IsUrl = false,
+                        IconPath = dirInfo.Parent.FullName,
+                        IconIndex = 0,
+                        IsDefaultIcon = false
+                    });
+                }
+
+                // Add directories first
+                foreach (var dir in Directory.GetDirectories(path))
+                {
+                    try
+                    {
+                        var di = new DirectoryInfo(dir);
+                        // Skip hidden and system directories
+                        if ((di.Attributes & FileAttributes.Hidden) != 0 || 
+                            (di.Attributes & FileAttributes.System) != 0)
+                            continue;
+
+                        contentList.Add(new ListItemInfo
+                        {
+                            FormattedTitle = di.Name,
+                            FormattedSubTitle = "Directory",
+                            TagData = di.FullName,
+                            IsUrl = false,
+                            IconPath = di.FullName,
+                            IconIndex = 0,
+                            IsDefaultIcon = false
+                        });
+                    }
+                    catch (UnauthorizedAccessException) { }
+                    catch (Exception ex) { Debug.WriteLine($"Error: {ex.Message}"); }
+                }
+
+                // Add files
+                foreach (var file in Directory.GetFiles(path))
+                {
+                    try
+                    {
+                        var fi = new FileInfo(file);
+                        // Skip hidden and system files
+                        if ((fi.Attributes & FileAttributes.Hidden) != 0 ||
+                            (fi.Attributes & FileAttributes.System) != 0)
+                            continue;
+
+                        contentList.Add(new ListItemInfo
+                        {
+                            FormattedTitle = fi.Name,
+                            FormattedSubTitle = GetFileSizeString(fi.Length),
+                            TagData = fi.FullName,
+                            IsUrl = false,
+                            IconPath = fi.FullName,
+                            IconIndex = 0,
+                            IsDefaultIcon = false
+                        });
+                    }
+                    catch (UnauthorizedAccessException) { }
+                    catch (Exception ex) { Debug.WriteLine($"Error: {ex.Message}"); }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error getting directory contents: {ex.Message}");
+            }
+
+            return contentList;
+        }
+
+        /// <summary>
+        /// Convert file size to human-readable string
+        /// </summary>
+        private string GetFileSizeString(long bytes)
+        {
+            string[] sizes = { "B", "KB", "MB", "GB", "TB" };
+            int order = 0;
+            double size = bytes;
+            while (size >= 1024 && order < sizes.Length - 1)
+            {
+                order++;
+                size = size / 1024;
+            }
+            return $"{size:0.##} {sizes[order]}";
+        }
+
+        /// <summary>
+        /// Check if the input is a valid path pattern (e.g., ":", "C:\", "D:\folder")
+        /// </summary>
+        private bool IsPathInput(string input, out string normalizedPath)
+        {
+            normalizedPath = "";
+            
+            if (string.IsNullOrEmpty(input))
+                return false;
+
+            // Check for ":" only - show drives
+            if (input == ":")
+            {
+                normalizedPath = ":";
+                return true;
+            }
+
+            // Check for drive letter patterns like "C:", "C:\", "C:\folder"
+            if (input.Length >= 2 && char.IsLetter(input[0]) && input[1] == ':')
+            {
+                normalizedPath = input;
+                if (input.Length == 2)
+                    normalizedPath = input + "\\";
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Handle file explorer navigation
+        /// </summary>
+        private void HandleFileExplorerInput(string query)
+        {
+            _isFileExplorerMode = true;
+            _isQuirySearchMode = false;
+            
+            // Get max items from settings
+            int maxItems = Properties.Settings.Default.FileExplorerMaxItems;
+            if (maxItems < 10) maxItems = 10;
+            if (maxItems > 100) maxItems = 100;
+
+            if (query == ":")
+            {
+                // Show drive list
+                var driveList = GetDriveList();
+                lb.DataContext = driveList.Take(maxItems).ToList();
+                _currentExplorerPath = "";
+            }
+            else
+            {
+                // Show directory contents
+                string path = query;
+                
+                // Normalize path
+                if (path.Length == 2 && path[1] == ':')
+                    path = path + "\\";
+
+                if (Directory.Exists(path))
+                {
+                    var contents = GetDirectoryContents(path);
+                    
+                    // Filter if there's text after the last backslash
+                    int lastSlash = query.LastIndexOf('\\');
+                    if (lastSlash >= 0 && lastSlash < query.Length - 1)
+                    {
+                        string filter = query.Substring(lastSlash + 1);
+                        string basePath = query.Substring(0, lastSlash + 1);
+                        
+                        if (Directory.Exists(basePath))
+                        {
+                            contents = GetDirectoryContents(basePath);
+                            contents = contents.Where(item => 
+                                item.FormattedTitle.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0
+                            ).Take(maxItems).ToList();
+                            _currentExplorerPath = basePath;
+                        }
+                    }
+                    else
+                    {
+                        _currentExplorerPath = path;
+                        contents = contents.Take(maxItems).ToList();
+                    }
+
+                    lb.DataContext = contents;
+                }
+                else
+                {
+                    // Try to show filtered contents of parent directory
+                    int lastSlash = query.LastIndexOf('\\');
+                    if (lastSlash >= 0)
+                    {
+                        string basePath = query.Substring(0, lastSlash + 1);
+                        string filter = query.Substring(lastSlash + 1);
+                        
+                        if (Directory.Exists(basePath))
+                        {
+                            var contents = GetDirectoryContents(basePath);
+                            if (!string.IsNullOrEmpty(filter))
+                            {
+                                contents = contents.Where(item => 
+                                    item.FormattedTitle.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0
+                                ).ToList();
+                            }
+                            contents = contents.Take(maxItems).ToList();
+                            _currentExplorerPath = basePath;
+                            lb.DataContext = contents;
+                        }
+                        else
+                        {
+                            lb.DataContext = null;
+                        }
+                    }
+                    else
+                    {
+                        lb.DataContext = null;
+                    }
+                }
+            }
+
+            if (lb.Items.Count > 0)
+            {
+                lb.SelectedIndex = 0;
+            }
+        }
+
+        /// <summary>
+        /// Execute file explorer action - Enter key opens file or directory in Explorer
+        /// </summary>
+        private void ExecuteFileExplorerAction()
+        {
+            if (lb.SelectedItem == null)
+                return;
+
+            var item = (ListItemInfo)lb.SelectedItem;
+            string path = item.TagData;
+
+            if (Directory.Exists(path))
+            {
+                // Open directory in Explorer (Enter key)
+                try
+                {
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = "explorer.exe",
+                        Arguments = path,
+                        UseShellExecute = true
+                    });
+                    HideWindow();
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Error opening directory: {ex.Message}");
+                }
+            }
+            else if (File.Exists(path))
+            {
+                // Open file with shell
+                try
+                {
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = path,
+                        UseShellExecute = true
+                    });
+                    HideWindow();
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Error opening file: {ex.Message}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Navigate into selected directory - Tab key
+        /// </summary>
+        private void NavigateToSelectedDirectory()
+        {
+            if (lb.SelectedItem == null)
+                return;
+
+            var item = (ListItemInfo)lb.SelectedItem;
+            string path = item.TagData;
+
+            if (Directory.Exists(path))
+            {
+                // Navigate into directory
+                _suppressTextChanged = true;
+                tb.Text = path.EndsWith("\\") ? path : path + "\\";
+                tb.CaretIndex = tb.Text.Length;
+                _suppressTextChanged = false;
+                
+                HandleFileExplorerInput(tb.Text);
+            }
+        }
+
+        /// <summary>
+        /// Handle Tab key in file explorer mode - Bash-style auto-completion
+        /// </summary>
+        private void HandleTabKeyInFileExplorer()
+        {
+            string query = tb.Text;
+            
+            // First, check if the selected item's path matches the current text (arrow key selection case)
+            if (lb.SelectedItem != null)
+            {
+                var selectedItem = lb.SelectedItem as ListItemInfo;
+                if (selectedItem != null && selectedItem.FormattedTitle != "..")
+                {
+                    string selectedPath = selectedItem.TagData;
+                    
+                    // If text matches selected item's path exactly, navigate into it (like pressing \)
+                    if (query.Equals(selectedPath, StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (Directory.Exists(selectedPath))
+                        {
+                            _suppressTextChanged = true;
+                            tb.Text = selectedPath.EndsWith("\\") ? selectedPath : selectedPath + "\\";
+                            tb.CaretIndex = tb.Text.Length;
+                            _suppressTextChanged = false;
+                            
+                            HandleFileExplorerInput(tb.Text);
+                            return;
+                        }
+                    }
+                }
+            }
+            
+            // Check if there's a filter (partial path after last backslash)
+            int lastSlash = query.LastIndexOf('\\');
+            bool hasFilter = lastSlash >= 0 && lastSlash < query.Length - 1;
+            
+            if (hasFilter)
+            {
+                // Auto-completion mode
+                int itemCount = lb.Items.Count;
+                
+                if (itemCount == 1)
+                {
+                    // Only one match - auto-complete to this path
+                    var item = (ListItemInfo)lb.Items[0];
+                    string path = item.TagData;
+                    
+                    _suppressTextChanged = true;
+                    if (Directory.Exists(path))
+                    {
+                        // It's a directory - append backslash
+                        tb.Text = path.EndsWith("\\") ? path : path + "\\";
+                    }
+                    else
+                    {
+                        // It's a file - just complete the path
+                        tb.Text = path;
+                    }
+                    tb.CaretIndex = tb.Text.Length;
+                    _suppressTextChanged = false;
+                    
+                    HandleFileExplorerInput(tb.Text);
+                }
+                else if (itemCount > 1)
+                {
+                    // Multiple matches - find common prefix and complete to it
+                    string commonPrefix = FindCommonPrefix();
+                    if (!string.IsNullOrEmpty(commonPrefix))
+                    {
+                        string basePath = query.Substring(0, lastSlash + 1);
+                        string newPath = basePath + commonPrefix;
+                        
+                        if (newPath != query)
+                        {
+                            _suppressTextChanged = true;
+                            tb.Text = newPath;
+                            tb.CaretIndex = tb.Text.Length;
+                            _suppressTextChanged = false;
+                            
+                            HandleFileExplorerInput(tb.Text);
+                        }
+                        else
+                        {
+                            // Common prefix equals current query - check if selected item is a directory
+                            if (lb.SelectedItem != null)
+                            {
+                                var selectedItem = lb.SelectedItem as ListItemInfo;
+                                if (selectedItem != null && selectedItem.FormattedTitle != ".." && Directory.Exists(selectedItem.TagData))
+                                {
+                                    _suppressTextChanged = true;
+                                    tb.Text = selectedItem.TagData.EndsWith("\\") ? selectedItem.TagData : selectedItem.TagData + "\\";
+                                    tb.CaretIndex = tb.Text.Length;
+                                    _suppressTextChanged = false;
+                                    
+                                    HandleFileExplorerInput(tb.Text);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                // No filter - navigate into selected directory
+                NavigateToSelectedDirectory();
+            }
+        }
+
+        /// <summary>
+        /// Find common prefix among all items in the list
+        /// </summary>
+        private string FindCommonPrefix()
+        {
+            if (lb.Items.Count == 0)
+                return "";
+
+            var items = lb.Items.Cast<ListItemInfo>().ToList();
+            
+            // Skip ".." entry
+            items = items.Where(i => i.FormattedTitle != "..").ToList();
+            
+            if (items.Count == 0)
+                return "";
+
+            string firstTitle = items[0].FormattedTitle;
+            int prefixLength = firstTitle.Length;
+
+            foreach (var item in items.Skip(1))
+            {
+                string title = item.FormattedTitle;
+                int minLength = Math.Min(prefixLength, title.Length);
+                int matchLength = 0;
+
+                for (int i = 0; i < minLength; i++)
+                {
+                    if (char.ToLowerInvariant(firstTitle[i]) == char.ToLowerInvariant(title[i]))
+                    {
+                        matchLength++;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+
+                prefixLength = matchLength;
+                if (prefixLength == 0)
+                    break;
+            }
+
+            return prefixLength > 0 ? firstTitle.Substring(0, prefixLength) : "";
+        }
+
+        #endregion
+
         private void HideWindow()
         {
             if (_windowCloser != null)
@@ -495,6 +1171,10 @@ namespace Switcheroo {
             {
                 _linkHandler.CancelLoading();
             }
+
+            // Reset modes
+            _isFileExplorerMode = false;
+            _currentExplorerPath = "";
 
             _altTabAutoSwitch = false;
             Opacity = 0;
@@ -736,7 +1416,7 @@ namespace Switcheroo {
 
         private void TextChanged(object sender, TextChangedEventArgs args)
         {
-            if (!tb.IsEnabled)
+            if (!tb.IsEnabled || _suppressTextChanged)
             {
                 return;
             }
@@ -768,6 +1448,17 @@ namespace Switcheroo {
             }
             else
             {
+                // Check for file explorer mode (: or path input)
+                string normalizedPath;
+                if (IsPathInput(query, out normalizedPath))
+                {
+                    HandleFileExplorerInput(query);
+                    return;
+                }
+                
+                // Reset file explorer mode if not a path
+                _isFileExplorerMode = false;
+
                 if (_unfilteredLinkList.Count > 0 || _unfilteredWebList.Count > 0)
                 {
                     if (query.Length > 0)
@@ -839,6 +1530,7 @@ namespace Switcheroo {
                     }
                     else
                     {
+                        _isFileExplorerMode = false;
                         lb.DataContext = null;
                     }
                 }
@@ -937,6 +1629,7 @@ namespace Switcheroo {
                 }
 
                 ScrollSelectedItemIntoView();
+                UpdateTextBoxFromSelection();
             }
         }
 
@@ -960,6 +1653,7 @@ namespace Switcheroo {
                 }
 
                 ScrollSelectedItemIntoView();
+                UpdateTextBoxFromSelection();
             }
         }
 
@@ -969,6 +1663,32 @@ namespace Switcheroo {
             if (selectedItem != null)
             {
                 lb.ScrollIntoView(selectedItem);
+            }
+        }
+
+        /// <summary>
+        /// Update text box with selected item's path in file explorer mode
+        /// </summary>
+        private void UpdateTextBoxFromSelection()
+        {
+            if (!_isFileExplorerMode || lb.SelectedItem == null)
+                return;
+
+            var item = lb.SelectedItem as ListItemInfo;
+            if (item == null)
+                return;
+
+            // Don't update for ".." (parent directory)
+            if (item.FormattedTitle == "..")
+                return;
+
+            string path = item.TagData;
+            if (!string.IsNullOrEmpty(path))
+            {
+                _suppressTextChanged = true;
+                tb.Text = path;
+                tb.CaretIndex = tb.Text.Length;
+                _suppressTextChanged = false;
             }
         }
 

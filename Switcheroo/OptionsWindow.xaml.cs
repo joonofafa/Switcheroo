@@ -80,6 +80,20 @@ namespace Switcheroo {
             AutoSwitch.IsChecked = Settings.Default.AutoSwitch;
             AutoSwitch.IsEnabled = Settings.Default.AltTabHook;
             RunAsAdministrator.IsChecked = Settings.Default.RunAsAdmin;
+            
+            // Initialize File Explorer Max Items ComboBox (10 to 100, step 5)
+            for (int i = 10; i <= 100; i += 5)
+            {
+                FileExplorerMaxItemsComboBox.Items.Add(i);
+            }
+            
+            // Set current value
+            int currentMaxItems = Settings.Default.FileExplorerMaxItems;
+            if (currentMaxItems < 10) currentMaxItems = 10;
+            if (currentMaxItems > 100) currentMaxItems = 100;
+            // Round to nearest 5
+            currentMaxItems = ((currentMaxItems + 2) / 5) * 5;
+            FileExplorerMaxItemsComboBox.SelectedItem = currentMaxItems;
         }
 
         private void Cancel_Click(object sender, RoutedEventArgs e)
@@ -123,6 +137,12 @@ namespace Switcheroo {
                 Settings.Default.AltTabHook = AltTabCheckBox.IsChecked.GetValueOrDefault();
                 Settings.Default.AutoSwitch = AutoSwitch.IsChecked.GetValueOrDefault();
                 Settings.Default.RunAsAdmin = RunAsAdministrator.IsChecked.GetValueOrDefault();
+                
+                // Save File Explorer Max Items
+                if (FileExplorerMaxItemsComboBox.SelectedItem != null)
+                {
+                    Settings.Default.FileExplorerMaxItems = (int)FileExplorerMaxItemsComboBox.SelectedItem;
+                }
 
                 // Step 5: Save all settings at once
                 Settings.Default.Save();

@@ -320,8 +320,13 @@ namespace Switcheroo {
                     string pathToUse = iconPath;
                     int indexToUse = iconIndex;
 
-                    // For default icon or exe/dll files
-                    if (isDefaultIcon || 
+                    // Check if path is a directory or file that exists - use SHGetFileInfo
+                    if (Directory.Exists(iconPath) || File.Exists(iconPath))
+                    {
+                        icon = GetIconUsingSHGetFileInfo(iconPath);
+                    }
+                    // For default icon or exe/dll files with specific index
+                    else if (isDefaultIcon || 
                         iconPath.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) ||
                         iconPath.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
                     {
@@ -336,15 +341,6 @@ namespace Switcheroo {
                         if (File.Exists(iconPath))
                         {
                             icon = new System.Drawing.Icon(iconPath);
-                        }
-                    }
-                    else
-                    {
-                        // Try to extract from file
-                        int result = ExtractIconEx(pathToUse, indexToUse, out largeIcon, out _, 1);
-                        if (result > 0 && largeIcon != IntPtr.Zero)
-                        {
-                            icon = System.Drawing.Icon.FromHandle(largeIcon);
                         }
                     }
 
@@ -383,6 +379,46 @@ namespace Switcheroo {
 
             return null;
         }
+
+        /// <summary>
+        /// Get icon for file or directory using SHGetFileInfo
+        /// </summary>
+        private System.Drawing.Icon GetIconUsingSHGetFileInfo(string path)
+        {
+            SHFILEINFO shinfo = new SHFILEINFO();
+            uint flags = SHGFI_ICON | SHGFI_LARGEICON;
+            
+            IntPtr hImg = SHGetFileInfo(path, 0, ref shinfo, (uint)Marshal.SizeOf(shinfo), flags);
+            
+            if (hImg != IntPtr.Zero && shinfo.hIcon != IntPtr.Zero)
+            {
+                System.Drawing.Icon icon = (System.Drawing.Icon)System.Drawing.Icon.FromHandle(shinfo.hIcon).Clone();
+                DestroyIcon(shinfo.hIcon);
+                return icon;
+            }
+            
+            return null;
+        }
+
+        // SHGetFileInfo constants and structures
+        private const uint SHGFI_ICON = 0x100;
+        private const uint SHGFI_LARGEICON = 0x0;
+        private const uint SHGFI_SMALLICON = 0x1;
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+        private struct SHFILEINFO
+        {
+            public IntPtr hIcon;
+            public int iIcon;
+            public uint dwAttributes;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
+            public string szDisplayName;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 80)]
+            public string szTypeName;
+        }
+
+        [DllImport("shell32.dll", CharSet = CharSet.Auto)]
+        private static extern IntPtr SHGetFileInfo(string pszPath, uint dwFileAttributes, ref SHFILEINFO psfi, uint cbSizeFileInfo, uint uFlags);
 
         #region INotifyPropertyChanged
         
