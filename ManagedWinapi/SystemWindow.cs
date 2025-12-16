@@ -597,6 +597,9 @@ namespace ManagedWinapi.Windows {
         }
 
         private bool _isClosed = false;
+        /// <summary>
+        /// Returns whether this window has been closed.
+        /// </summary>
         public bool IsClosed
         {
             get
@@ -612,6 +615,9 @@ namespace ManagedWinapi.Windows {
             return GetClassName(HWnd, builder, builder.Capacity) == 0;
         }
 
+        /// <summary>
+        /// Returns whether this window is closed or hidden.
+        /// </summary>
         public bool IsClosedOrHidden
         {
             get { return IsClosed || !Visible; }

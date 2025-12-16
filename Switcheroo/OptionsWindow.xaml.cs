@@ -93,31 +93,50 @@ namespace Switcheroo {
 
             try
             {
+                // Step 1: Disable both hotkeys first to prevent conflicts
                 _hotkey.Enabled = false;
                 _lnkHotkey.Enabled = false;
 
-                if (Settings.Default.EnableHotKey)
+                // Step 2: Get new enable states from UI (use these for logic below)
+                bool enableHotKey = HotKeyCheckBox.IsChecked.GetValueOrDefault();
+                bool enableLnkHotkey = LnkHotKeyCheckBok.IsChecked.GetValueOrDefault();
+
+                // Step 3: Update hotkey properties (but don't enable yet)
+                _hotkey.Alt = _hotkeyViewModel.Alt;
+                _hotkey.Shift = _hotkeyViewModel.Shift;
+                _hotkey.Ctrl = _hotkeyViewModel.Ctrl;
+                _hotkey.WindowsKey = _hotkeyViewModel.Windows;
+                _hotkey.KeyCode = (Keys)KeyInterop.VirtualKeyFromKey(_hotkeyViewModel.KeyCode);
+
+                _lnkHotkey.Alt = _lnkHotkeyViewModel.Alt;
+                _lnkHotkey.Shift = _lnkHotkeyViewModel.Shift;
+                _lnkHotkey.Ctrl = _lnkHotkeyViewModel.Ctrl;
+                _lnkHotkey.WindowsKey = _lnkHotkeyViewModel.Windows;
+                _lnkHotkey.KeyCode = (Keys)KeyInterop.VirtualKeyFromKey(_lnkHotkeyViewModel.KeyCode);
+
+                // Step 4: Save all settings to Settings.Default (without calling Save() yet)
+                _hotkey.SaveSettings(saveImmediately: false);
+                _lnkHotkey.SaveSettings(saveImmediately: false);
+                
+                Settings.Default.EnableHotKey = enableHotKey;
+                Settings.Default.EnableLnkHotkey = enableLnkHotkey;
+                Settings.Default.AltTabHook = AltTabCheckBox.IsChecked.GetValueOrDefault();
+                Settings.Default.AutoSwitch = AutoSwitch.IsChecked.GetValueOrDefault();
+                Settings.Default.RunAsAdmin = RunAsAdministrator.IsChecked.GetValueOrDefault();
+
+                // Step 5: Save all settings at once
+                Settings.Default.Save();
+
+                // Step 6: Now enable hotkeys based on new settings
+                if (enableHotKey)
                 {
-                    _hotkey.Alt = _hotkeyViewModel.Alt;
-                    _hotkey.Shift = _hotkeyViewModel.Shift;
-                    _hotkey.Ctrl = _hotkeyViewModel.Ctrl;
-                    _hotkey.WindowsKey = _hotkeyViewModel.Windows;
-                    _hotkey.KeyCode = (Keys)KeyInterop.VirtualKeyFromKey(_hotkeyViewModel.KeyCode);
                     _hotkey.Enabled = true;
                 }
 
-                if (Settings.Default.EnableLnkHotkey)
+                if (enableLnkHotkey)
                 {
-                    _lnkHotkey.Alt = _lnkHotkeyViewModel.Alt;
-                    _lnkHotkey.Shift = _lnkHotkeyViewModel.Shift;
-                    _lnkHotkey.Ctrl = _lnkHotkeyViewModel.Ctrl;
-                    _lnkHotkey.WindowsKey = _lnkHotkeyViewModel.Windows;
-                    _lnkHotkey.KeyCode = (Keys)KeyInterop.VirtualKeyFromKey(_lnkHotkeyViewModel.KeyCode);
                     _lnkHotkey.Enabled = true;
                 }
-
-                _hotkey.SaveSettings();
-                _lnkHotkey.SaveSettings();
             }
             catch (HotkeyAlreadyInUseException)
             {
@@ -126,13 +145,6 @@ namespace Switcheroo {
                 MessageBox.Show(boxText, "Shortcut already in use", MessageBoxButton.OK, MessageBoxImage.Warning);
                 closeOptionsWindow = false;
             }
-
-            Settings.Default.EnableHotKey = HotKeyCheckBox.IsChecked.GetValueOrDefault();
-            Settings.Default.EnableLnkHotkey = LnkHotKeyCheckBok.IsChecked.GetValueOrDefault();
-            Settings.Default.AltTabHook = AltTabCheckBox.IsChecked.GetValueOrDefault();
-            Settings.Default.AutoSwitch = AutoSwitch.IsChecked.GetValueOrDefault();
-            Settings.Default.RunAsAdmin = RunAsAdministrator.IsChecked.GetValueOrDefault();
-            Settings.Default.Save();
 
             if (closeOptionsWindow)
             {
@@ -236,8 +248,22 @@ namespace Switcheroo {
 
         private void HotkeyPreview_OnLostFocus(object sender, RoutedEventArgs e)
         {
+            // Don't re-enable here - let Ok_Click handle enabling with new settings
+            // Re-enabling with old settings can cause conflicts
+            // Only re-enable if the checkbox is still checked (for Cancel case)
+            if (!HotKeyCheckBox.IsChecked.GetValueOrDefault())
+            {
+                return;
+            }
+
             try
             {
+                // Temporarily apply the preview settings before re-enabling
+                _hotkey.Alt = _hotkeyViewModel.Alt;
+                _hotkey.Shift = _hotkeyViewModel.Shift;
+                _hotkey.Ctrl = _hotkeyViewModel.Ctrl;
+                _hotkey.WindowsKey = _hotkeyViewModel.Windows;
+                _hotkey.KeyCode = (Keys)KeyInterop.VirtualKeyFromKey(_hotkeyViewModel.KeyCode);
                 _hotkey.Enabled = true;
             }
             catch (HotkeyAlreadyInUseException)
@@ -294,8 +320,22 @@ namespace Switcheroo {
 
         private void LnkHotkeyPreview_OnLostFocus(object sender, RoutedEventArgs e)
         {
+            // Don't re-enable here - let Ok_Click handle enabling with new settings
+            // Re-enabling with old settings can cause conflicts
+            // Only re-enable if the checkbox is still checked (for Cancel case)
+            if (!LnkHotKeyCheckBok.IsChecked.GetValueOrDefault())
+            {
+                return;
+            }
+
             try
             {
+                // Temporarily apply the preview settings before re-enabling
+                _lnkHotkey.Alt = _lnkHotkeyViewModel.Alt;
+                _lnkHotkey.Shift = _lnkHotkeyViewModel.Shift;
+                _lnkHotkey.Ctrl = _lnkHotkeyViewModel.Ctrl;
+                _lnkHotkey.WindowsKey = _lnkHotkeyViewModel.Windows;
+                _lnkHotkey.KeyCode = (Keys)KeyInterop.VirtualKeyFromKey(_lnkHotkeyViewModel.KeyCode);
                 _lnkHotkey.Enabled = true;
             }
             catch (HotkeyAlreadyInUseException)

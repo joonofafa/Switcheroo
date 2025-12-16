@@ -1,9 +1,7 @@
 ﻿using Switcheroo.Core;
 using System;
 using System.ComponentModel;
-using System.Drawing;
 using System.IO;
-using System.Linq.Expressions;
 using System.Runtime.InteropServices;
 using System.Windows.Media.Imaging;
 
@@ -82,7 +80,7 @@ namespace Switcheroo {
         }
     }
 
-    public class AppWindowViewModel : ListItemInfo, INotifyPropertyChanged, IWindowText {
+    public class AppWindowViewModel : ListItemInfo, IWindowText {
         public AppWindowViewModel(AppWindow appWindow)
         {
             AppWindow = appWindow;
@@ -115,20 +113,13 @@ namespace Switcheroo {
 
         public BitmapImage WindowIcon => IconHelper.GetIconFromWindowHandle(HWnd);
 
-        public event PropertyChangedEventHandler PropertyChangedHwnd;
-
-        protected virtual void OnPropertyChanged(string propertyName)
-        {
-            PropertyChangedHwnd?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
-
         public new string FormattedTitle
         {
             get => base.FormattedTitle;
             set
             {
                 base.FormattedTitle = value;
-                NotifyOfPropertyChange(() => FormattedTitle);
+                OnPropertyChanged(nameof(FormattedTitle));
             }
         }
 
@@ -138,7 +129,7 @@ namespace Switcheroo {
             set
             {
                 base.FormattedSubTitle = value;
-                NotifyOfPropertyChange(() => FormattedSubTitle);
+                OnPropertyChanged(nameof(FormattedSubTitle));
             }
         }
 
@@ -148,7 +139,7 @@ namespace Switcheroo {
             set
             {
                 base.ImageSource = value;
-                NotifyOfPropertyChange(() => ImageSource);
+                OnPropertyChanged(nameof(ImageSource));
             }
         }
 
@@ -160,37 +151,10 @@ namespace Switcheroo {
             set
             {
                 _isBeingClosed = value;
-                NotifyOfPropertyChange(() => IsBeingClosed);
+                OnPropertyChanged(nameof(IsBeingClosed));
             }
         }
 
-        #endregion
-
-        #region INotifyPropertyChanged Members
-
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        private void NotifyOfPropertyChange<T>(Expression<Func<T>> property)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(GetPropertyName(property)));
-        }
-
-        private string GetPropertyName<T>(Expression<Func<T>> property)
-        {
-            var lambda = (LambdaExpression)property;
-
-            MemberExpression memberExpression;
-            if (lambda.Body is UnaryExpression unaryExpression)
-            {
-                memberExpression = (MemberExpression)unaryExpression.Operand;
-            }
-            else
-            {
-                memberExpression = (MemberExpression)lambda.Body;
-            }
-
-            return memberExpression.Member.Name;
-        }
         #endregion
     }
 

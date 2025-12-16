@@ -29,14 +29,22 @@ namespace Switcheroo {
             Shift = Properties.Settings.Default.Shift;
         }
 
-        public void SaveSettings()
+        /// <summary>
+        /// Save settings to Properties.Settings.Default without calling Save()
+        /// Call Settings.Default.Save() separately after all settings are updated
+        /// </summary>
+        public void SaveSettings(bool saveImmediately = false)
         {
             Properties.Settings.Default.HotKey = (int)KeyCode;
             Properties.Settings.Default.WindowsKey = WindowsKey;
             Properties.Settings.Default.Alt = Alt;
             Properties.Settings.Default.Ctrl = Ctrl;
             Properties.Settings.Default.Shift = Shift;
-            Properties.Settings.Default.Save();
+            
+            if (saveImmediately)
+            {
+                Properties.Settings.Default.Save();
+            }
         }
     }
 
@@ -50,14 +58,22 @@ namespace Switcheroo {
             Shift = Properties.Settings.Default.LnkShift;
         }
 
-        public void SaveSettings()
+        /// <summary>
+        /// Save settings to Properties.Settings.Default without calling Save()
+        /// Call Settings.Default.Save() separately after all settings are updated
+        /// </summary>
+        public void SaveSettings(bool saveImmediately = false)
         {
             Properties.Settings.Default.LnkHotKey = (int)KeyCode;
             Properties.Settings.Default.LnkWindowsKey = WindowsKey;
             Properties.Settings.Default.LnkAlt = Alt;
             Properties.Settings.Default.LnkCtrl = Ctrl;
             Properties.Settings.Default.LnkShift = Shift;
-            Properties.Settings.Default.Save();
+            
+            if (saveImmediately)
+            {
+                Properties.Settings.Default.Save();
+            }
         }
     }
 }
