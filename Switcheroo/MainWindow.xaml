@@ -6,7 +6,7 @@
         Closing="OnClose" ResizeMode="NoResize" ShowInTaskbar="False" WindowStyle="None" AllowsTransparency="True"
         SizeToContent="WidthAndHeight"
         Title="" MinWidth="800" Deactivated="MainWindow_OnLostFocus" Loaded="MainWindow_OnLoaded"
-        BorderBrush="Transparent" BorderThickness="1" Background="#FF252525" Width="1000">
+        BorderBrush="Transparent" BorderThickness="1" Background="#FF252525" Width="800">
 
     <Window.CommandBindings>
         <CommandBinding Command="local:MainWindow.CloseWindowCommand"

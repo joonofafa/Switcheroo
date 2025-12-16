@@ -303,19 +303,62 @@ namespace Switcheroo {
             tb.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FF515173"));
 
             _isLinkQuiryMode = true;
-            if (_linkHandler == null)
-            {
-                _linkHandler = new LinkHandler();
-                await _linkHandler.CacheExecutableLinksList();
-            }
-            _unfilteredLinkList = _linkHandler.GetAllExecuteableLinksList();
-            _unfilteredWebList = _linkHandler.GetAllSearchList();
-            lb.DataContext = null;
+            _isQuirySearchMode = false;
 
-            tb.Clear();
-            tb.Focus();
-            CenterWindow();
-            ScrollSelectedItemIntoView();
+            try
+            {
+                if (_linkHandler == null)
+                {
+                    _linkHandler = new LinkHandler();
+                }
+
+                // Only cache if not already loaded or currently loading
+                if (!_linkHandler.IsLoaded && !_linkHandler.IsLoading)
+                {
+                    await _linkHandler.CacheExecutableLinksList();
+                }
+                else if (_linkHandler.IsLoading)
+                {
+                    // Wait for existing loading to complete with timeout
+                    const int maxWaitMs = 10000; // 10 seconds max
+                    const int delayMs = 50;
+                    int waited = 0;
+                    
+                    while (_linkHandler.IsLoading && waited < maxWaitMs)
+                    {
+                        await Task.Delay(delayMs);
+                        waited += delayMs;
+                    }
+                    
+                    // If still loading after timeout, cancel and return
+                    if (_linkHandler.IsLoading)
+                    {
+                        _linkHandler.CancelLoading();
+                        System.Diagnostics.Debug.WriteLine("LoadLinkData: Timeout waiting for loading to complete");
+                        return;
+                    }
+                }
+
+                // Check if loading was successful
+                if (!_linkHandler.IsLoaded)
+                {
+                    return;
+                }
+
+                _unfilteredLinkList = _linkHandler.GetAllExecuteableLinksList();
+                _unfilteredWebList = _linkHandler.GetAllSearchList();
+                lb.DataContext = null;
+
+                tb.Clear();
+                tb.Focus();
+                CenterWindow();
+                ScrollSelectedItemIntoView();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error in LoadLinkData: {ex.Message}");
+                // Don't rethrow - just hide window gracefully
+            }
         }
 
         private static bool AreWindowsRelated(SystemWindow window1, SystemWindow window2)
@@ -446,6 +489,12 @@ namespace Switcheroo {
                 _windowCloser = null;
             }
 
+            // Cancel any ongoing link loading operation
+            if (_linkHandler != null && _linkHandler.IsLoading)
+            {
+                _linkHandler.CancelLoading();
+            }
+
             _altTabAutoSwitch = false;
             Opacity = 0;
             Dispatcher.BeginInvoke(new Action(Hide), DispatcherPriority.Input);
@@ -553,19 +602,44 @@ namespace Switcheroo {
                 return;
             }
 
-            if (Visibility != Visibility.Visible)
+            try
             {
-                tb.IsEnabled = true;
+                if (Visibility != Visibility.Visible)
+                {
+                    // If currently loading, cancel and hide
+                    if (_linkHandler != null && _linkHandler.IsLoading)
+                    {
+                        _linkHandler.CancelLoading();
+                        HideWindow();
+                        return;
+                    }
 
-                _foregroundWindow = SystemWindow.ForegroundWindow;
-                Show();
-                Activate();
-                Keyboard.Focus(tb);
-                await LoadLinkData(InitialFocus.NextItem);
-                Opacity = 1;
+                    tb.IsEnabled = true;
+
+                    _foregroundWindow = SystemWindow.ForegroundWindow;
+                    Show();
+                    Activate();
+                    Keyboard.Focus(tb);
+                    await LoadLinkData(InitialFocus.NextItem);
+                    
+                    // Only show if loading completed successfully
+                    if (_linkHandler != null && _linkHandler.IsLoaded)
+                    {
+                        Opacity = 1;
+                    }
+                    else
+                    {
+                        HideWindow();
+                    }
+                }
+                else
+                {
+                    HideWindow();
+                }
             }
-            else
+            catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"Error in Hotkey_HotkeyForExecuterPressed: {ex.Message}");
                 HideWindow();
             }
         }

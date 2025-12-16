@@ -1,6 +1,5 @@
 ﻿using IniParser;
 using IniParser.Model;
-using IWshRuntimeLibrary;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Concurrent;
@@ -8,6 +7,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.ComTypes;
+using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Switcheroo {
@@ -26,87 +28,173 @@ namespace Switcheroo {
         private static readonly int ICON_DEFAULT_INDEX = 2;
         private static readonly int ICON_WEB_INDEX = 13;
 
-        public async Task CacheExecutableLinksList()
+        // Loading state and cancellation support
+        private CancellationTokenSource _cancellationTokenSource;
+        private readonly object _lockObject = new object();
+        public bool IsLoading { get; private set; }
+        public bool IsLoaded { get; private set; }
+
+        /// <summary>
+        /// Cancels any ongoing caching operation
+        /// </summary>
+        public void CancelLoading()
         {
-            // Clear existing data
-            while (!_listExecInfo.IsEmpty)
+            lock (_lockObject)
             {
-                _listExecInfo.TryTake(out _);
+                if (_cancellationTokenSource != null && !_cancellationTokenSource.IsCancellationRequested)
+                {
+                    _cancellationTokenSource.Cancel();
+                }
+            }
+        }
+
+        public async Task CacheExecutableLinksList(CancellationToken externalToken = default)
+        {
+            // Prevent multiple simultaneous loading operations
+            lock (_lockObject)
+            {
+                if (IsLoading)
+                {
+                    return;
+                }
+                IsLoading = true;
+                _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(externalToken);
             }
 
-            // Collect all file paths from both locations
-            var allLnkFiles = new List<string>();
-            var allUrlFiles = new List<string>();
+            var token = _cancellationTokenSource.Token;
 
-            string startMenuPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonStartMenu), "Programs");
-            string programsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs");
-
-            // Collect files from both locations
-            await Task.Run(() =>
+            try
             {
-                if (Directory.Exists(startMenuPath))
+                // Clear existing data
+                while (!_listExecInfo.IsEmpty)
                 {
-                    allLnkFiles.AddRange(FindLnkFiles(startMenuPath));
-                    allUrlFiles.AddRange(FindUrlFiles(startMenuPath));
+                    _listExecInfo.TryTake(out _);
                 }
+                _listSearchInfo.Clear();
 
-                if (Directory.Exists(programsPath))
-                {
-                    allLnkFiles.AddRange(FindLnkFiles(programsPath));
-                    allUrlFiles.AddRange(FindUrlFiles(programsPath));
-                }
-            });
+                // Collect all file paths from both locations
+                var allLnkFiles = new List<string>();
+                var allUrlFiles = new List<string>();
 
-            // Process .lnk files in parallel
-            await Task.Run(() =>
-            {
-                Parallel.ForEach(allLnkFiles, file =>
+                string startMenuPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonStartMenu), "Programs");
+                string programsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs");
+
+                // Collect files from both locations
+                await Task.Run(() =>
                 {
-                    try
+                    token.ThrowIfCancellationRequested();
+
+                    if (Directory.Exists(startMenuPath))
                     {
-                        var itemInfo = GetLinkItemInfoFromShortcut(file);
-                        if (itemInfo != null)
+                        allLnkFiles.AddRange(FindLnkFiles(startMenuPath));
+                        allUrlFiles.AddRange(FindUrlFiles(startMenuPath));
+                    }
+
+                    token.ThrowIfCancellationRequested();
+
+                    if (Directory.Exists(programsPath))
+                    {
+                        allLnkFiles.AddRange(FindLnkFiles(programsPath));
+                        allUrlFiles.AddRange(FindUrlFiles(programsPath));
+                    }
+                }, token);
+
+                token.ThrowIfCancellationRequested();
+
+                // Process .lnk files - use STA thread for COM objects
+                // WshShell is a STA COM object, so we process sequentially to avoid threading issues
+                await Task.Run(() =>
+                {
+                    foreach (var file in allLnkFiles)
+                    {
+                        if (token.IsCancellationRequested)
+                            break;
+
+                        try
                         {
-                            _listExecInfo.Add(itemInfo);
+                            var itemInfo = GetLinkItemInfoFromShortcut(file);
+                            if (itemInfo != null)
+                            {
+                                _listExecInfo.Add(itemInfo);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            // Log exception if needed, but continue processing other files
+                            System.Diagnostics.Debug.WriteLine($"Error processing .lnk file {file}: {ex.Message}");
                         }
                     }
-                    catch (Exception ex)
-                    {
-                        // Log exception if needed, but continue processing other files
-                        Console.WriteLine($"Error processing .lnk file {file}: {ex.Message}");
-                    }
-                });
-            });
+                }, token);
 
-            // Process .url files in parallel
-            await Task.Run(() =>
-            {
-                Parallel.ForEach(allUrlFiles, file =>
+                token.ThrowIfCancellationRequested();
+
+                // Process .url files in parallel (no COM objects involved)
+                await Task.Run(() =>
                 {
+                    var options = new ParallelOptions 
+                    { 
+                        CancellationToken = token,
+                        MaxDegreeOfParallelism = Environment.ProcessorCount 
+                    };
+
                     try
                     {
-                        var itemInfo = GetUrlFromShortcut(file);
-                        if (itemInfo != null)
+                        Parallel.ForEach(allUrlFiles, options, file =>
                         {
-                            _listExecInfo.Add(itemInfo);
-                        }
+                            try
+                            {
+                                var itemInfo = GetUrlFromShortcut(file);
+                                if (itemInfo != null)
+                                {
+                                    _listExecInfo.Add(itemInfo);
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                // Log exception if needed, but continue processing other files
+                                System.Diagnostics.Debug.WriteLine($"Error processing .url file {file}: {ex.Message}");
+                            }
+                        });
                     }
-                    catch (Exception ex)
+                    catch (OperationCanceledException)
                     {
-                        // Log exception if needed, but continue processing other files
-                        Console.WriteLine($"Error processing .url file {file}: {ex.Message}");
+                        // Expected when cancelled
                     }
-                });
-            });
+                }, token);
 
-            // These can also run in parallel
-            await Task.Run(() =>
+                token.ThrowIfCancellationRequested();
+
+                // Load UWP and Search lists
+                await Task.Run(() =>
+                {
+                    MakeUWPAppList();
+                    token.ThrowIfCancellationRequested();
+                    MakeSearchList();
+                }, token);
+
+                IsLoaded = true;
+            }
+            catch (OperationCanceledException)
             {
-                Parallel.Invoke(
-                    () => MakeUWPAppList(),
-                    () => MakeSearchList()
-                );
-            });
+                // Loading was cancelled, this is expected behavior
+                System.Diagnostics.Debug.WriteLine("Link caching was cancelled.");
+                IsLoaded = false;
+            }
+            catch (Exception ex)
+            {
+                // Unexpected error during loading
+                System.Diagnostics.Debug.WriteLine($"Error during link caching: {ex.Message}");
+                IsLoaded = false;
+            }
+            finally
+            {
+                lock (_lockObject)
+                {
+                    IsLoading = false;
+                    _cancellationTokenSource?.Dispose();
+                    _cancellationTokenSource = null;
+                }
+            }
         }
 
 
@@ -250,57 +338,64 @@ namespace Switcheroo {
 
         private ListItemInfo GetLinkItemInfoFromShortcut(string shortcutPath)
         {
-            WshShell shell = null;
-            IWshShortcut shortcut = null;
-
             try
             {
-                shell = new WshShell();
-                shortcut = (IWshShortcut)shell.CreateShortcut(shortcutPath);
-                
-                if (shortcut == null)
+                string targetPath = "";
+                string iconLocation = "";
+                int iconIndex = 0;
+
+                // Use Shell32 IShellLink interface instead of WshShell COM object
+                // This is thread-safe and doesn't require STA
+                ShellLink shellLink = new ShellLink();
+                try
                 {
-                    return null;
+                    ((IPersistFile)shellLink).Load(shortcutPath, 0);
+                    
+                    StringBuilder targetBuilder = new StringBuilder(260);
+                    ((IShellLinkW)shellLink).GetPath(targetBuilder, targetBuilder.Capacity, IntPtr.Zero, SLGP_FLAGS.SLGP_RAWPATH);
+                    targetPath = targetBuilder.ToString();
+
+                    StringBuilder iconBuilder = new StringBuilder(260);
+                    ((IShellLinkW)shellLink).GetIconLocation(iconBuilder, iconBuilder.Capacity, out iconIndex);
+                    iconLocation = iconBuilder.ToString();
+                    
+                    // Expand environment variables in paths (e.g., %SystemRoot%)
+                    if (!string.IsNullOrEmpty(iconLocation))
+                    {
+                        iconLocation = Environment.ExpandEnvironmentVariables(iconLocation);
+                    }
+                    if (!string.IsNullOrEmpty(targetPath))
+                    {
+                        targetPath = Environment.ExpandEnvironmentVariables(targetPath);
+                    }
+                }
+                finally
+                {
+                    Marshal.ReleaseComObject(shellLink);
                 }
 
-                string iconLocation = shortcut.IconLocation ?? "";
-                string targetPath = shortcut.TargetPath ?? "";
-                
                 ListItemInfo listItemInfo = new ListItemInfo
                 {
                     FormattedTitle = Path.GetFileNameWithoutExtension(shortcutPath),
-                    FormattedSubTitle = Path.GetFileNameWithoutExtension(targetPath),
+                    FormattedSubTitle = !string.IsNullOrEmpty(targetPath) ? Path.GetFileNameWithoutExtension(targetPath) : "",
                     TagData = shortcutPath,
                     ImageSource = null,
                     IsUrl = false
                 };
 
-                if (string.IsNullOrEmpty(iconLocation))
+                if (!string.IsNullOrEmpty(iconLocation))
                 {
-                    listItemInfo.IconPath = ICON_DEFAULT_PATH;
-                    listItemInfo.IconIndex = ICON_DEFAULT_INDEX;
-                    listItemInfo.IsDefaultIcon = true;
-                    return listItemInfo;
-                }
-
-                try
-                {
-                    string[] iconPathParts = iconLocation.Split(',');
-                    string iconPath = (!string.IsNullOrEmpty(iconPathParts[0].Trim()) && iconPathParts[0].Trim().Length > 1) 
-                                    ? iconPathParts[0].Trim() 
-                                    : targetPath;
-                    
-                    int iconIndex = 0;
-                    if (iconPathParts.Length > 1 && int.TryParse(iconPathParts[1].Trim(), out int parsedIndex))
-                    {
-                        iconIndex = parsedIndex;
-                    }
-
-                    listItemInfo.IconPath = iconPath;
+                    listItemInfo.IconPath = iconLocation;
                     listItemInfo.IconIndex = iconIndex;
                     listItemInfo.IsDefaultIcon = false;
                 }
-                catch (Exception)
+                else if (!string.IsNullOrEmpty(targetPath))
+                {
+                    listItemInfo.IconPath = targetPath;
+                    listItemInfo.IconIndex = 0;
+                    listItemInfo.IsDefaultIcon = false;
+                }
+                else
                 {
                     listItemInfo.IconPath = ICON_DEFAULT_PATH;
                     listItemInfo.IconIndex = ICON_DEFAULT_INDEX;
@@ -312,22 +407,53 @@ namespace Switcheroo {
             catch (Exception ex)
             {
                 // Log the specific error for debugging
-                Console.WriteLine($"Error processing shortcut file {shortcutPath}: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error processing shortcut file {shortcutPath}: {ex.Message}");
                 return null;
             }
-            finally
-            {
-                // COM 객체 리소스 해제
-                if (shortcut != null)
-                {
-                    System.Runtime.InteropServices.Marshal.ReleaseComObject(shortcut);
-                }
-                if (shell != null)
-                {
-                    System.Runtime.InteropServices.Marshal.ReleaseComObject(shell);
-                }
-            }
         }
+
+        #region Shell32 IShellLink Interop
+
+        [ComImport]
+        [Guid("00021401-0000-0000-C000-000000000046")]
+        private class ShellLink { }
+
+        [ComImport]
+        [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+        [Guid("000214F9-0000-0000-C000-000000000046")]
+        private interface IShellLinkW
+        {
+            // Note: IUnknown methods are automatically handled by InterfaceIsIUnknown
+            // Do NOT include QueryInterface, AddRef, Release here!
+            void GetPath([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder pszFile, int cch, IntPtr pfd, SLGP_FLAGS fFlags);
+            void GetIDList(out IntPtr ppidl);
+            void SetIDList(IntPtr pidl);
+            void GetDescription([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder pszName, int cch);
+            void SetDescription([MarshalAs(UnmanagedType.LPWStr)] string pszName);
+            void GetWorkingDirectory([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder pszDir, int cch);
+            void SetWorkingDirectory([MarshalAs(UnmanagedType.LPWStr)] string pszDir);
+            void GetArguments([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder pszArgs, int cch);
+            void SetArguments([MarshalAs(UnmanagedType.LPWStr)] string pszArgs);
+            void GetHotkey(out ushort pwHotkey);
+            void SetHotkey(ushort wHotkey);
+            void GetShowCmd(out int piShowCmd);
+            void SetShowCmd(int iShowCmd);
+            void GetIconLocation([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder pszIconPath, int cch, out int piIcon);
+            void SetIconLocation([MarshalAs(UnmanagedType.LPWStr)] string pszIconPath, int iIcon);
+            void SetRelativePath([MarshalAs(UnmanagedType.LPWStr)] string pszPathRel, uint dwReserved);
+            void Resolve(IntPtr hwnd, uint fFlags);
+            void SetPath([MarshalAs(UnmanagedType.LPWStr)] string pszFile);
+        }
+
+        [Flags]
+        private enum SLGP_FLAGS
+        {
+            SLGP_SHORTPATH = 0x1,
+            SLGP_UNCPRIORITY = 0x2,
+            SLGP_RAWPATH = 0x4
+        }
+
+        #endregion
 
         public List<ListItemInfo> GetAllExecuteableLinksList()
         {

@@ -194,7 +194,7 @@ namespace Switcheroo {
         #endregion
     }
 
-    public class ListItemInfo {
+    public class ListItemInfo : INotifyPropertyChanged {
         public ListItemInfo() { }
         public ListItemInfo(string title, string subTitle, BitmapImage imageSource, string tagData, bool isUrl)
         {
@@ -282,111 +282,154 @@ namespace Switcheroo {
             set { _isDefaultIcon = value; }
         }
 
-        // Lazy loading property for ImageSource
+        // Flag to track if async loading has started
+        private bool _iconLoadingStarted = false;
+
+        // Lazy loading property for ImageSource with async support
         public BitmapImage LazyImageSource
         {
             get
             {
-                if (_bitmapImage == null && !string.IsNullOrEmpty(_iconPath))
+                if (_bitmapImage == null && !string.IsNullOrEmpty(_iconPath) && !_iconLoadingStarted)
                 {
-                    // Load image on UI thread when actually needed
-                    if (System.Windows.Application.Current?.Dispatcher?.CheckAccess() == true)
-                    {
-                        _bitmapImage = LoadIconFromPath(_iconPath, _iconIndex, _isDefaultIcon);
-                    }
-                    else
-                    {
-                        System.Windows.Application.Current?.Dispatcher?.Invoke(() =>
-                        {
-                            _bitmapImage = LoadIconFromPath(_iconPath, _iconIndex, _isDefaultIcon);
-                        });
-                    }
+                    _iconLoadingStarted = true;
+                    // Load icon asynchronously
+                    LoadIconAsync();
                 }
                 return _bitmapImage;
             }
         }
 
-        private BitmapImage LoadIconFromPath(string iconPath, int iconIndex, bool isDefaultIcon)
+        private async void LoadIconAsync()
         {
             try
             {
-                if (isDefaultIcon)
+                string iconPath = _iconPath;
+                int iconIndex = _iconIndex;
+                bool isDefaultIcon = _isDefaultIcon;
+
+                // Extract icon bytes on background thread
+                byte[] iconBytes = await System.Threading.Tasks.Task.Run(() =>
                 {
-                    return LoadIconFromExecutable(iconPath, iconIndex);
-                }
-                else if (System.IO.Path.GetExtension(iconPath).ToLower() == ".ico")
+                    return ExtractIconBytes(iconPath, iconIndex, isDefaultIcon);
+                });
+
+                // Convert to BitmapImage on UI thread
+                if (iconBytes != null && iconBytes.Length > 0)
                 {
-                    return LoadIconFromFile(iconPath);
-                }
-                else
-                {
-                    return LoadIconFromExecutable(iconPath, iconIndex);
+                    System.Windows.Application.Current?.Dispatcher?.Invoke(() =>
+                    {
+                        try
+                        {
+                            var bitmapImage = new BitmapImage();
+                            bitmapImage.BeginInit();
+                            bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+                            bitmapImage.StreamSource = new MemoryStream(iconBytes);
+                            bitmapImage.EndInit();
+                            bitmapImage.Freeze();
+                            
+                            _bitmapImage = bitmapImage;
+                            OnPropertyChanged(nameof(LazyImageSource));
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Error creating BitmapImage: {ex.Message}");
+                        }
+                    });
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                return LoadIconFromExecutable("C:\\Windows\\System32\\shell32.dll", 2);
+                System.Diagnostics.Debug.WriteLine($"Error loading icon async: {ex.Message}");
             }
         }
 
-        private BitmapImage LoadIconFromExecutable(string exePath, int iconIndex)
+        private byte[] ExtractIconBytes(string iconPath, int iconIndex, bool isDefaultIcon)
         {
-            if (string.IsNullOrEmpty(exePath))
-                return null;
-
-            IntPtr largeIcon = IntPtr.Zero;
-            System.Drawing.Icon icon = null;
-
             try
             {
-                int result = ExtractIconEx(exePath, iconIndex, out largeIcon, out _, 1);
-                if (result <= 0 || largeIcon == IntPtr.Zero)
-                    return null;
+                IntPtr largeIcon = IntPtr.Zero;
+                System.Drawing.Icon icon = null;
 
-                icon = System.Drawing.Icon.FromHandle(largeIcon);
-                if (icon == null)
-                    return null;
+                try
+                {
+                    string pathToUse = iconPath;
+                    int indexToUse = iconIndex;
 
-                return IconHelper.ConvertIconToBitmap(icon);
+                    // For default icon or exe/dll files
+                    if (isDefaultIcon || 
+                        iconPath.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) ||
+                        iconPath.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
+                    {
+                        int result = ExtractIconEx(pathToUse, indexToUse, out largeIcon, out _, 1);
+                        if (result > 0 && largeIcon != IntPtr.Zero)
+                        {
+                            icon = System.Drawing.Icon.FromHandle(largeIcon);
+                        }
+                    }
+                    else if (iconPath.EndsWith(".ico", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (File.Exists(iconPath))
+                        {
+                            icon = new System.Drawing.Icon(iconPath);
+                        }
+                    }
+                    else
+                    {
+                        // Try to extract from file
+                        int result = ExtractIconEx(pathToUse, indexToUse, out largeIcon, out _, 1);
+                        if (result > 0 && largeIcon != IntPtr.Zero)
+                        {
+                            icon = System.Drawing.Icon.FromHandle(largeIcon);
+                        }
+                    }
+
+                    // Fallback to default icon
+                    if (icon == null)
+                    {
+                        int result = ExtractIconEx("C:\\Windows\\System32\\shell32.dll", 2, out largeIcon, out _, 1);
+                        if (result > 0 && largeIcon != IntPtr.Zero)
+                        {
+                            icon = System.Drawing.Icon.FromHandle(largeIcon);
+                        }
+                    }
+
+                    if (icon != null)
+                    {
+                        using (var bitmap = icon.ToBitmap())
+                        using (var ms = new MemoryStream())
+                        {
+                            bitmap.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+                            return ms.ToArray();
+                        }
+                    }
+                }
+                finally
+                {
+                    if (icon != null)
+                        icon.Dispose();
+                    if (largeIcon != IntPtr.Zero)
+                        DestroyIcon(largeIcon);
+                }
             }
-            catch
+            catch (Exception ex)
             {
-                return null;
+                System.Diagnostics.Debug.WriteLine($"Error extracting icon bytes: {ex.Message}");
             }
-            finally
-            {
-                if (icon != null)
-                    icon.Dispose();
-                if (largeIcon != IntPtr.Zero)
-                    DestroyIcon(largeIcon);
-            }
+
+            return null;
         }
 
-        private BitmapImage LoadIconFromFile(string iconPath)
+        #region INotifyPropertyChanged
+        
+        public event PropertyChangedEventHandler PropertyChanged;
+        
+        protected virtual void OnPropertyChanged(string propertyName)
         {
-            if (string.IsNullOrEmpty(iconPath) || !System.IO.File.Exists(iconPath))
-                return null;
-
-            System.Drawing.Icon icon = null;
-
-            try
-            {
-                icon = new System.Drawing.Icon(iconPath);
-                if (icon == null)
-                    return null;
-
-                return IconHelper.ConvertIconToBitmap(icon);
-            }
-            catch
-            {
-                return null;
-            }
-            finally
-            {
-                if (icon != null)
-                    icon.Dispose();
-            }
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
+        
+        #endregion
 
         [DllImport("shell32.dll", CharSet = CharSet.Auto)]
         private static extern int ExtractIconEx(string lpszFile, int nIconIndex, out IntPtr largeIcon, out IntPtr smallIcon, int nIcons);
