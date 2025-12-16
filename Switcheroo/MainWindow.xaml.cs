@@ -393,8 +393,9 @@ namespace Switcheroo {
             Border.MaxHeight = SystemParameters.PrimaryScreenHeight;
 
             // Force a rendering before repositioning the window
+            // Use SizeToContent.Height to keep width fixed
             SizeToContent = SizeToContent.Manual;
-            SizeToContent = SizeToContent.WidthAndHeight;
+            SizeToContent = SizeToContent.Height;
 
             // Position the window in the center of the screen
             Left = (SystemParameters.PrimaryScreenWidth / 2) - (ActualWidth / 2);
@@ -993,6 +994,53 @@ namespace Switcheroo {
             var duration = new Duration(TimeSpan.FromSeconds(0.150));
             var newHeight = HelpPanel.Height > 0 ? 0 : +17;
             HelpPanel.BeginAnimation(HeightProperty, new DoubleAnimation(HelpPanel.Height, newHeight, duration));
+        }
+
+        // Windows API for simulating key press
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
+        
+        private const byte VK_SNAPSHOT = 0x2C;
+        private const uint KEYEVENTF_KEYUP = 0x0002;
+
+        private void TextBox_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            // Handle PrintScreen key - prevent TextBox from processing it
+            if (e.Key == Key.PrintScreen || e.Key == Key.Snapshot)
+            {
+                e.Handled = true;
+                
+                // Hide window temporarily to capture screen without Switcheroo
+                Opacity = 0;
+                
+                // Execute PrintScreen after a brief delay to ensure window is hidden
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    // Simulate PrintScreen key press
+                    keybd_event(VK_SNAPSHOT, 0, 0, UIntPtr.Zero);
+                    keybd_event(VK_SNAPSHOT, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+                    
+                    // Restore window after capture
+                    Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        Opacity = 1;
+                    }), DispatcherPriority.Background);
+                }), DispatcherPriority.Input);
+            }
+        }
+
+        private void TextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            // Block any text input from PrintScreen key (may appear as special character)
+            if (e.Text.Length == 1)
+            {
+                char c = e.Text[0];
+                // Block non-printable control characters (except common ones like space)
+                if (char.IsControl(c) && c != ' ' && c != '\t' && c != '\r' && c != '\n')
+                {
+                    e.Handled = true;
+                }
+            }
         }
 
         #endregion

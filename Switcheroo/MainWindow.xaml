@@ -4,7 +4,7 @@
         xmlns:local="clr-namespace:Switcheroo"
         xmlns:system="clr-namespace:System;assembly=mscorlib"
         Closing="OnClose" ResizeMode="NoResize" ShowInTaskbar="False" WindowStyle="None" AllowsTransparency="True"
-        SizeToContent="WidthAndHeight"
+        SizeToContent="Height"
         Title="" MinWidth="800" Deactivated="MainWindow_OnLostFocus" Loaded="MainWindow_OnLoaded"
         BorderBrush="Transparent" BorderThickness="1" Background="#FF252525" Width="800">
 
@@ -82,7 +82,8 @@
                     <ColumnDefinition Width="265*"/>
                 </Grid.ColumnDefinitions>
                 <TextBox Name="tb" Padding="5" VerticalAlignment="Center" TextChanged="TextChanged" FontSize="24"
-                         VerticalContentAlignment="Center" Background="#FF68686F" Foreground="White" SelectionBrush="#FFA5AAAD" FontFamily="KT font Bold" FontWeight="Bold" Grid.ColumnSpan="3">
+                         VerticalContentAlignment="Center" Background="#FF68686F" Foreground="White" SelectionBrush="#FFA5AAAD" FontFamily="KT font Bold" FontWeight="Bold" Grid.ColumnSpan="3"
+                         PreviewKeyDown="TextBox_PreviewKeyDown" PreviewTextInput="TextBox_PreviewTextInput">
                     <TextBox.InputBindings>
                         <!-- For now, leave these here.  Would it be better to route them upward? -->
                         <KeyBinding Command="local:MainWindow.ScrollListUpCommand" Key="Up" />
@@ -121,8 +122,9 @@
                     </TextBlock.Triggers>
                 </TextBlock>
             </Grid>
-            <ListBox Name="lb" SelectionMode="Extended" ItemsSource="{Binding}" MinWidth="522" BorderThickness="0"
-                     Margin="-1,3,-1,0" Padding="0" DockPanel.Dock="Bottom" Background="#FF68686F" Foreground="White" FontSize="16">
+            <ListBox Name="lb" SelectionMode="Extended" ItemsSource="{Binding}" BorderThickness="0"
+                     Margin="-1,3,-1,0" Padding="0" DockPanel.Dock="Bottom" Background="#FF68686F" Foreground="White" FontSize="16"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <StackPanel Orientation="Horizontal">
@@ -170,13 +172,13 @@
                                     </Style.Triggers>
                                 </Style>
                             </StackPanel.Resources>
-                            <Grid>
+                            <Grid MaxWidth="780">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="30" />
-                                    <ColumnDefinition Width="700" />
+                                    <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="100" />
                                 </Grid.ColumnDefinitions>
 								<Image Height="30" Grid.Row="0" Grid.Column="0" Margin="3,0">
