@@ -394,5 +394,18 @@ namespace Switcheroo {
         {
             LnkHotkeyPreview.IsEnabled = false;
         }
+
+        private void Refresh_Click(object sender, RoutedEventArgs e)
+        {
+            // Reload settings from file
+            Settings.Default.Reload();
+            
+            // Get the main window and refresh its settings
+            var mainWindow = Application.Current.MainWindow as MainWindow;
+            mainWindow?.RefreshSettings();
+            
+            MessageBox.Show("Settings and configuration files have been refreshed.", 
+                "Refresh Complete", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
     }
 }

@@ -49,6 +49,16 @@ namespace Switcheroo {
             }
         }
 
+        /// <summary>
+        /// Reload search_list.json and uwp_list.json configurations
+        /// </summary>
+        public void ReloadSearchAndUwpConfigs()
+        {
+            // Clear and reload search list
+            _listSearchInfo.Clear();
+            MakeSearchList();
+        }
+
         public async Task CacheExecutableLinksList(CancellationToken externalToken = default)
         {
             // Prevent multiple simultaneous loading operations

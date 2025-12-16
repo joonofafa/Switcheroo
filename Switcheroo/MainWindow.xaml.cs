@@ -334,6 +334,33 @@ namespace Switcheroo {
         }
 
         /// <summary>
+        /// Refresh all settings and configuration files without restarting the application
+        /// </summary>
+        public void RefreshSettings()
+        {
+            // Reload func_list.json
+            LoadFunctionKeyMacros();
+            Debug.WriteLine("Reloaded func_list.json");
+            
+            // Reload ignore_list.json
+            LoadIgnoreItems();
+            Debug.WriteLine("Reloaded ignore_list.json");
+            
+            // Reload search_list.json and uwp_list.json via LinkHandler
+            if (_linkHandler != null)
+            {
+                _linkHandler.ReloadSearchAndUwpConfigs();
+                
+                // Also reload executable links cache
+                _linkHandler.CancelLoading();
+                // Fire and forget - start loading in background
+                _ = _linkHandler.CacheExecutableLinksList();
+            }
+            
+            Debug.WriteLine("Settings refreshed successfully");
+        }
+
+        /// <summary>
         /// Execute function key macro if defined
         /// </summary>
         private bool TryExecuteFunctionKeyMacro(Key key)
