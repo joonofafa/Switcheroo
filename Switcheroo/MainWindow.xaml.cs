@@ -996,11 +996,36 @@ namespace Switcheroo {
             HelpPanel.BeginAnimation(HeightProperty, new DoubleAnimation(HelpPanel.Height, newHeight, duration));
         }
 
-        // Windows API for simulating key press
-        [System.Runtime.InteropServices.DllImport("user32.dll")]
-        private static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
-        
-        private const byte VK_SNAPSHOT = 0x2C;
+        // Windows API for simulating key press using SendInput
+        [System.Runtime.InteropServices.DllImport("user32.dll", SetLastError = true)]
+        private static extern uint SendInput(uint nInputs, INPUT[] pInputs, int cbSize);
+
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+        private struct INPUT
+        {
+            public uint type;
+            public INPUTUNION u;
+        }
+
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit)]
+        private struct INPUTUNION
+        {
+            [System.Runtime.InteropServices.FieldOffset(0)]
+            public KEYBDINPUT ki;
+        }
+
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+        private struct KEYBDINPUT
+        {
+            public ushort wVk;
+            public ushort wScan;
+            public uint dwFlags;
+            public uint time;
+            public IntPtr dwExtraInfo;
+        }
+
+        private const uint INPUT_KEYBOARD = 1;
+        private const ushort VK_SNAPSHOT = 0x2C;
         private const uint KEYEVENTF_KEYUP = 0x0002;
 
         private void TextBox_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
@@ -1010,20 +1035,43 @@ namespace Switcheroo {
             {
                 e.Handled = true;
                 
-                // Hide window temporarily to capture screen without Switcheroo
+                // Hide window and release focus before sending PrintScreen
                 Opacity = 0;
+                Hide();
                 
-                // Execute PrintScreen after a brief delay to ensure window is hidden
+                // Execute PrintScreen after window is fully hidden
                 Dispatcher.BeginInvoke(new Action(() =>
                 {
-                    // Simulate PrintScreen key press
-                    keybd_event(VK_SNAPSHOT, 0, 0, UIntPtr.Zero);
-                    keybd_event(VK_SNAPSHOT, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+                    System.Threading.Thread.Sleep(100); // Brief delay to ensure window is hidden
                     
-                    // Restore window after capture
+                    // Send PrintScreen key using SendInput
+                    INPUT[] inputs = new INPUT[2];
+                    
+                    // Key down
+                    inputs[0].type = INPUT_KEYBOARD;
+                    inputs[0].u.ki.wVk = VK_SNAPSHOT;
+                    inputs[0].u.ki.wScan = 0;
+                    inputs[0].u.ki.dwFlags = 0;
+                    inputs[0].u.ki.time = 0;
+                    inputs[0].u.ki.dwExtraInfo = IntPtr.Zero;
+                    
+                    // Key up
+                    inputs[1].type = INPUT_KEYBOARD;
+                    inputs[1].u.ki.wVk = VK_SNAPSHOT;
+                    inputs[1].u.ki.wScan = 0;
+                    inputs[1].u.ki.dwFlags = KEYEVENTF_KEYUP;
+                    inputs[1].u.ki.time = 0;
+                    inputs[1].u.ki.dwExtraInfo = IntPtr.Zero;
+                    
+                    SendInput(2, inputs, System.Runtime.InteropServices.Marshal.SizeOf(typeof(INPUT)));
+                    
+                    // Restore window after a delay
                     Dispatcher.BeginInvoke(new Action(() =>
                     {
+                        Show();
+                        Activate();
                         Opacity = 1;
+                        tb.Focus();
                     }), DispatcherPriority.Background);
                 }), DispatcherPriority.Input);
             }

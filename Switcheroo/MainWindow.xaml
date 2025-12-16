@@ -124,7 +124,7 @@
             </Grid>
             <ListBox Name="lb" SelectionMode="Extended" ItemsSource="{Binding}" BorderThickness="0"
                      Margin="-1,3,-1,0" Padding="0" DockPanel.Dock="Bottom" Background="#FF68686F" Foreground="White" FontSize="16"
-                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled" Grid.IsSharedSizeScope="True">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <StackPanel Orientation="Horizontal">
@@ -172,14 +172,14 @@
                                     </Style.Triggers>
                                 </Style>
                             </StackPanel.Resources>
-                            <Grid MaxWidth="780">
+                            <Grid Width="776">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="30" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="100" />
+                                    <ColumnDefinition Width="30" SharedSizeGroup="IconCol" />
+                                    <ColumnDefinition Width="*" SharedSizeGroup="TitleCol" />
+                                    <ColumnDefinition Width="120" SharedSizeGroup="ProcessCol" />
                                 </Grid.ColumnDefinitions>
 								<Image Height="30" Grid.Row="0" Grid.Column="0" Margin="3,0">
 									<Image.Style>
@@ -203,7 +203,8 @@
 									</Image.Style>
 								</Image>
                                 <TextBlock local:FormattedTextAttribute.FormattedText="{Binding Path=FormattedTitle}"
-                                           Grid.Row="0" Grid.Column="1" Margin="3,0" VerticalAlignment="Center" FontFamily="KT font Light">
+                                           Grid.Row="0" Grid.Column="1" Margin="3,0" VerticalAlignment="Center" FontFamily="KT font Light"
+                                           TextTrimming="CharacterEllipsis">
                                     <TextBlock.Foreground>
                                         <SolidColorBrush
                                             Color="{Binding IsBeingClosed, Converter={StaticResource TitleColorConverter}, Mode=OneTime}" />
@@ -211,7 +212,8 @@
                                 </TextBlock>
                                 <TextBlock
                                     local:FormattedTextAttribute.FormattedText="{Binding Path=FormattedSubTitle}"
-                                    Grid.Row="0" Grid.Column="2" Margin="0" TextAlignment="Right" VerticalAlignment="Center" FontFamily="KT font Light">
+                                    Grid.Row="0" Grid.Column="2" Margin="0" TextAlignment="Right" VerticalAlignment="Center" FontFamily="KT font Light"
+                                    TextTrimming="CharacterEllipsis">
                                     <TextBlock.Foreground>
                                         <SolidColorBrush
                                             Color="{Binding IsBeingClosed, Converter={StaticResource ProcessColorConverter}, Mode=OneTime}" />
